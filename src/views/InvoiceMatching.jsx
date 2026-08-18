@@ -125,7 +125,7 @@ export const InvoiceMatching = () => {
               </div>
             </div>
             <div style={{ fontSize: 12, color: 'var(--color-gray-500)', fontWeight: 600 }}>
-              Queue: <span style={{ color: 'var(--color-brand-700)', fontWeight: 800 }}>{currentQueueIndex + 1} of {invoicesQueue.length}</span>
+              Queue: <span style={{ color: 'var(--color-brand-700)', fontWeight: 800 }}>{currentQueueIndex + 1} of {matchingQueue.length}</span>
             </div>
           </div>
 
