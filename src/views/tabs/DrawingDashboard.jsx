@@ -296,18 +296,25 @@ export const DrawingDashboard = () => {
           </div>
 
           <div onMouseLeave={() => setHoveredTreemap(null)} style={{ flex: 1, position: 'relative' }}>
-            <div onMouseLeave={() => setHoveredTreemap(null)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, ease: 'easeOut' }}
+              onMouseLeave={() => setHoveredTreemap(null)} 
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <Treemap
                   data={csiTreemapData}
                   dataKey="size"
                   aspectRatio={4 / 3}
                   stroke="#fff"
+                  isAnimationActive={false}
                   content={<CustomizedTreemapContent />}
                   onMouseLeave={() => setHoveredTreemap(null)}
                 />
               </ResponsiveContainer>
-            </div>
+            </motion.div>
           </div>
         </div>
 
