@@ -6,112 +6,11 @@ import {
   Eye, Check, Edit3, ArrowRight, ShieldCheck, Sparkles, Filter, ExternalLink, HelpCircle, X
 } from 'lucide-react';
 import { Button, StatusPill, ConfidenceBadge } from '../../components/ui';
-
-const initialExceptions = [
-  { 
-    id: 'EXC-001', 
-    invNo: 'INV-9021',
-    vendor: 'Fast Fixings Ltd', 
-    date: '2026-08-12', 
-    type: 'Blurry Scan / Low Contrast', 
-    confidence: 45, 
-    severity: 'High',
-    itemsCount: '4 Lines',
-    totalAmount: '14,910.00 AED',
-    issueDesc: 'Thermal scan resolution below 150 DPI. Optical OCR engine could not recognize character glyphs in table totals with high certainty.',
-    missingField: 'Subtotal & Tax Figures',
-    resolved: false
-  },
-  { 
-    id: 'EXC-002', 
-    invNo: 'INV-8834',
-    vendor: 'Unknown Vendor (Unmatched TRN)', 
-    date: '2026-08-12', 
-    type: 'Missing PO Number', 
-    confidence: 52, 
-    severity: 'Critical',
-    itemsCount: '12 Lines',
-    totalAmount: '84,200.00 AED',
-    issueDesc: 'No Purchase Order reference found on document header. Vendor TRN 100492817200003 is not linked to an active subcontract PO.',
-    missingField: 'PO Number Reference',
-    suggestedPo: 'PO-99128 (Al Barsha Tower Superstructure)',
-    resolved: false
-  },
-  { 
-    id: 'EXC-003', 
-    invNo: 'INV-7721',
-    vendor: 'Steel & Co Trading PJSC', 
-    date: '2026-08-11', 
-    type: 'Amount Mismatch (PO vs Inv)', 
-    confidence: 82, 
-    severity: 'High',
-    itemsCount: '3 Lines',
-    totalAmount: '145,200.00 AED',
-    issueDesc: 'Unit rate on Line 2 billed at 3,450 AED/MT vs contract rate agreed on PO-99150 at 3,100 AED/MT (+11.3% variance).',
-    missingField: 'Rate Discrepancy',
-    resolved: false
-  },
-  { 
-    id: 'EXC-004', 
-    invNo: 'INV-6612',
-    vendor: 'BuildMat Corp LLC', 
-    date: '2026-08-10', 
-    type: 'Unrecognized Tax ID (FTA)', 
-    confidence: 75, 
-    severity: 'Medium',
-    itemsCount: '1 Line',
-    totalAmount: '32,500.00 AED',
-    issueDesc: 'VAT TRN 100293847500003 failed automated Luhn checksum verification against UAE Federal Tax Authority registry.',
-    missingField: 'Tax Registration Number (TRN)',
-    resolved: false
-  },
-  { 
-    id: 'EXC-005', 
-    invNo: 'INV-5519',
-    vendor: 'Office Supplies & Stationers', 
-    date: '2026-08-08', 
-    type: 'Missing Authorized Signature', 
-    confidence: 60, 
-    severity: 'Medium',
-    itemsCount: '2 Lines',
-    totalAmount: '4,850.00 AED',
-    issueDesc: 'Invoice exceeds 3,000 AED threshold but lacks required receiving engineer stamp & signature block.',
-    missingField: 'Site Receiving Stamp',
-    resolved: false
-  },
-  { 
-    id: 'EXC-006', 
-    invNo: 'INV-4410',
-    vendor: 'Tech Hardware Solutions FZ', 
-    date: '2026-08-08', 
-    type: 'Incorrect Currency Format', 
-    confidence: 85, 
-    severity: 'Low',
-    itemsCount: '4 Lines',
-    totalAmount: '$12,400.00 USD',
-    issueDesc: 'Invoice currency stated in USD ($) while project accounting ledger requires AED at fixed central bank parity 3.6725.',
-    missingField: 'Currency Normalization (AED)',
-    resolved: false
-  },
-  { 
-    id: 'EXC-007', 
-    invNo: 'INV-3301',
-    vendor: 'National Cleaning Services', 
-    date: '2026-08-07', 
-    type: 'Duplicate Invoice Hash', 
-    confidence: 92, 
-    severity: 'Critical',
-    itemsCount: '1 Line',
-    totalAmount: '18,000.00 AED',
-    issueDesc: 'Identical invoice number INV-3301 and amount was already settled on Voucher AP-2026-0412 on July 24.',
-    missingField: 'Duplicate Audit Flag',
-    resolved: false
-  }
-];
+import { useInvoiceContext } from '../../context/InvoiceContext';
 
 export const OcrExceptions = () => {
-  const [exceptionsList, setExceptionsList] = useState(initialExceptions);
-  const [activeExceptionId, setActiveExceptionId] = useState('EXC-002');
+  const { exceptionsList, setExceptionsList } = useInvoiceContext();
+  const [activeExceptionId, setActiveExceptionId] = useState(exceptionsList[0]?.id || 'EXC-002');
   const [search, setSearch] = useState('');
   const [filterSeverity, setFilterSeverity] = useState('All');
   

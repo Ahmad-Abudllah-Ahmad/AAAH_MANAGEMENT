@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { InvoiceProvider } from './context/InvoiceContext';
 import { Layout } from './components/layout';
 import { Home } from './views/Home';
 import { InvoiceMatching } from './views/InvoiceMatching';
@@ -210,7 +211,7 @@ const App = () => {
 
   return (
     <BrowserRouter>
-      <>
+      <InvoiceProvider>
         {/* Background gradient blobs */}
         <div className="bg-blob-1" />
         <div className="bg-blob-2" />
@@ -727,7 +728,7 @@ const App = () => {
             </Layout>
           } />
         </Routes>
-      </>
+      </InvoiceProvider>
     </BrowserRouter>
   );
 };

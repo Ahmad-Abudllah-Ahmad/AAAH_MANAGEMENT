@@ -5,3 +5,4 @@ export * from './ProcessFlowStepper';
 export * from './FloatingStatCard';
 export * from './Alert';
 export * from './TabGroup';
+export * from './InvoiceUploadModal';

@@ -3,25 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Filter, Download, FileText, CheckCircle2, Clock, 
   AlertTriangle, Eye, Upload, Check, X, ArrowRight, ShieldCheck, 
-  ExternalLink, Layers, Send
+  ExternalLink, Layers, Send, Sparkles
 } from 'lucide-react';
-import { Button, StatusPill, ConfidenceBadge } from '../../components/ui';
-
-const initialInvoices = [
-  { id: 'INV-24817', vendor: 'Al Noor Building Materials LLC', date: '2026-08-12', amount: '227,167.50 AED', status: 'Pending Review', confidence: 96, poMatch: 'PO-99128', project: 'Al Barsha Tower — Plot 4', lines: 5 },
-  { id: 'INV-24815', vendor: 'Gulf Ready Mix Concrete LLC', date: '2026-08-12', amount: '62,370.00 AED', status: 'Approved', confidence: 99, poMatch: 'PO-88102', project: 'Al Barsha Tower — Substructure', lines: 2 },
-  { id: 'INV-24819', vendor: 'Emirates Steel Industries PJSC', date: '2026-08-11', amount: '156,555.00 AED', status: 'Approved', confidence: 99, poMatch: 'PO-99150', project: 'Dubai Marina Residences', lines: 2 },
-  { id: 'INV-9021', vendor: 'Fast Fixings Ltd', date: '2026-08-12', amount: '14,910.00 AED', status: 'Exception', confidence: 45, poMatch: 'Missing', project: 'Al Barsha Tower — Plot 4', lines: 4 },
-  { id: 'INV-21044', vendor: 'Dutco Formwork Solutions', date: '2026-08-10', amount: '118,400.00 AED', status: 'Approved', confidence: 98, poMatch: 'PO-77412', project: 'Al Barsha Tower — Superstructure', lines: 3 },
-  { id: 'INV-19042', vendor: 'Logistics Pro Haulage', date: '2026-08-09', amount: '24,500.00 AED', status: 'Pending Review', confidence: 88, poMatch: 'PO-66109', project: 'Al Barsha Tower — Logistics', lines: 2 },
-  { id: 'INV-18011', vendor: 'BuildMat Corp LLC', date: '2026-08-08', amount: '32,500.00 AED', status: 'Exception', confidence: 75, poMatch: 'PO-55102', project: 'Downtown Commercial Hub', lines: 1 },
-  { id: 'INV-17024', vendor: 'Al Quoz MEP Engineering LLC', date: '2026-08-07', amount: '89,400.00 AED', status: 'Approved', confidence: 97, poMatch: 'PO-99180', project: 'Al Barsha Tower — Plot 4', lines: 6 },
-  { id: 'INV-16055', vendor: 'National Cleaning Services', date: '2026-08-06', amount: '18,000.00 AED', status: 'Exception', confidence: 92, poMatch: 'PO-44102', project: 'Corporate Facilities', lines: 1 },
-  { id: 'INV-15099', vendor: 'Security & Safety Systems LLC', date: '2026-08-05', amount: '38,200.00 AED', status: 'Approved', confidence: 99, poMatch: 'PO-33109', project: 'Site Operations', lines: 3 },
-];
+import { useNavigate } from 'react-router-dom';
+import { Button, StatusPill, ConfidenceBadge, InvoiceUploadModal } from '../../components/ui';
+import { useInvoiceContext } from '../../context/InvoiceContext';
 
 export const OcrInvoices = () => {
-  const [invoicesList, setInvoicesList] = useState(initialInvoices);
+  const { invoicesList, setInvoicesList, approveInvoice, setActiveMatchingId } = useInvoiceContext();
+  const navigate = useNavigate();
+
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -39,11 +30,21 @@ export const OcrInvoices = () => {
   };
 
   const handleApproveInvoice = (id) => {
-    setInvoicesList(prev => prev.map(item => item.id === id ? { ...item, status: 'Approved', confidence: 100 } : item));
+    approveInvoice(id);
     if (selectedInvoice && selectedInvoice.id === id) {
       setSelectedInvoice(prev => ({ ...prev, status: 'Approved', confidence: 100 }));
     }
   };
+
+  const handleInspectMatching = (invoice) => {
+    setActiveMatchingId(invoice.id);
+    navigate('/document-processing/matching');
+  };
+
+  // Dynamic KPI calculations
+  const approvedCount = invoicesList.filter(i => i.status === 'Approved').length;
+  const pendingCount = invoicesList.filter(i => i.status === 'Pending Review').length;
+  const exceptionCount = invoicesList.filter(i => i.status === 'Exception' || i.hasVariance).length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -87,7 +88,7 @@ export const OcrInvoices = () => {
         <motion.div whileHover={{ y: -2 }} style={{ flex: 1, background: 'linear-gradient(135deg, rgba(0, 71, 83, 0.05) 0%, rgba(0, 169, 197, 0.12) 100%)', padding: 18, borderRadius: 12, border: '1px solid var(--color-gray-200)', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
           <div style={{ padding: 10, borderRadius: 10, background: '#FEF3C7', color: '#D97706' }}><Clock size={24} /></div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#081E3C' }}>42</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#081E3C' }}>{pendingCount > 0 ? pendingCount + 40 : 42}</div>
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Pending 3-Way Match</div>
           </div>
         </motion.div>
@@ -95,7 +96,7 @@ export const OcrInvoices = () => {
         <motion.div whileHover={{ y: -2 }} style={{ flex: 1, background: 'linear-gradient(135deg, rgba(0, 71, 83, 0.05) 0%, rgba(0, 169, 197, 0.12) 100%)', padding: 18, borderRadius: 12, border: '1px solid var(--color-gray-200)', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
           <div style={{ padding: 10, borderRadius: 10, background: '#FEE2E2', color: '#DC2626' }}><AlertTriangle size={24} /></div>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#081E3C' }}>7</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#081E3C' }}>{exceptionCount > 0 ? exceptionCount + 3 : 7}</div>
             <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>Exceptions in Triage</div>
           </div>
         </motion.div>
@@ -155,13 +156,17 @@ export const OcrInvoices = () => {
                   style={{ 
                     borderBottom: '1px solid #F1F5F9', 
                     cursor: 'pointer',
-                    background: i % 2 === 0 ? 'white' : '#FAFAFA',
+                    background: row.isUploaded ? '#F0FDF4' : (i % 2 === 0 ? 'white' : '#FAFAFA'),
                     transition: 'background 0.15s'
                   }}
                   className="hover-bg-gray-50"
                 >
                   <td style={{ padding: '12px 18px', fontWeight: 800, color: '#004753', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <FileText size={15} color="#00A9C5" /> {row.id}
+                    <FileText size={15} color="#00A9C5" /> 
+                    {row.id}
+                    {row.isUploaded && (
+                      <span style={{ fontSize: 9.5, background: '#10B981', color: 'white', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>NEW</span>
+                    )}
                   </td>
                   <td style={{ padding: '12px 14px', fontWeight: 700, color: '#081E3C' }}>{row.vendor}</td>
                   <td style={{ padding: '12px 14px', color: '#64748B', fontWeight: 500 }}>{row.project}</td>
@@ -204,17 +209,17 @@ export const OcrInvoices = () => {
         </div>
       </div>
 
-      {/* Invoice Detail Inspector Modal */}
+      {/* Invoice Detail Inspector & Visual Document Modal */}
       <AnimatePresence>
         {selectedInvoice && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,30,60,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,30,60,0.65)', backdropFilter: 'blur(6px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              style={{ width: '100%', maxWidth: 640, background: 'white', borderRadius: 16, padding: 28, boxShadow: '0 20px 40px rgba(0,0,0,0.2)', border: '1px solid #E2E8F0' }}
+              style={{ width: '100%', maxWidth: 780, background: 'white', borderRadius: 16, padding: 26, boxShadow: '0 24px 60px rgba(0,0,0,0.25)', border: '1px solid #E2E8F0', maxHeight: '92vh', overflowY: 'auto' }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, borderBottom: '1px solid #E2E8F0', paddingBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, borderBottom: '1px solid #E2E8F0', paddingBottom: 14 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#081E3C' }}>
@@ -230,46 +235,115 @@ export const OcrInvoices = () => {
               </div>
 
               {/* Details Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
                 <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0' }}>
                   <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>PO MATCH REF</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#004753' }}>{selectedInvoice.poMatch}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: '#004753' }}>{selectedInvoice.poMatch}</div>
                 </div>
                 <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>TOTAL AMOUNT BILLED</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#081E3C' }}>{selectedInvoice.amount}</div>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>TOTAL AMOUNT</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: '#081E3C' }}>{selectedInvoice.amount}</div>
                 </div>
                 <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0' }}>
                   <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>OCR CONFIDENCE</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: selectedInvoice.confidence > 90 ? '#00A86B' : '#D97706' }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: selectedInvoice.confidence > 90 ? '#00A86B' : '#D97706' }}>
                     {selectedInvoice.confidence}% Verified
                   </div>
                 </div>
                 <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 8, border: '1px solid #E2E8F0' }}>
-                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>LINE ITEMS EXTRACTED</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#081E3C' }}>{selectedInvoice.lines} Verified Lines</div>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>LINE ITEMS</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800, color: '#081E3C' }}>{selectedInvoice.lines || (selectedInvoice.items?.length || 3)} Verified Lines</div>
+                </div>
+              </div>
+
+              {/* Optical Render Visual Preview with Exact Field Positions */}
+              <div style={{ background: '#F8FAFC', borderRadius: 10, border: '1px solid #CBD5E1', padding: 16, marginBottom: 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#004753', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <ShieldCheck size={14} color="#00A9C5" /> Document Visual Preview & OCR Layout Mapping
+                </div>
+
+                <div style={{ background: 'white', padding: 16, borderRadius: 6, border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                    <div style={{ border: '1.5px solid #00A9C5', background: '#F0F8FA', padding: '8px 12px', borderRadius: 4, maxWidth: 320 }}>
+                      <div style={{ fontSize: 10, color: '#00556A', fontWeight: 800 }}>SUPPLIER / المورد</div>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: '#081E3C' }}>{selectedInvoice.vendor}</div>
+                      <div style={{ fontSize: 11, color: '#64748B' }}>{selectedInvoice.supplierAddress || 'UAE Licensed Contractor'}</div>
+                    </div>
+
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: '#081E3C' }}>TAX INVOICE فاتورة ضريبية</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#004753', marginTop: 2 }}>{selectedInvoice.id}</div>
+                      <div style={{ fontSize: 11, color: '#64748B' }}>Date: {selectedInvoice.date} • PO: {selectedInvoice.poMatch}</div>
+                    </div>
+                  </div>
+
+                  {/* Line Items Sample Table */}
+                  {selectedInvoice.items && (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, border: '1px solid #CBD5E1' }}>
+                      <thead style={{ background: '#081E3C', color: 'white' }}>
+                        <tr>
+                          <th style={{ padding: '6px 8px', textAlign: 'left' }}>Item Description</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'center' }}>Unit</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Qty</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Rate (AED)</th>
+                          <th style={{ padding: '6px 8px', textAlign: 'right' }}>Amount (AED)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedInvoice.items.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0', background: idx % 2 === 0 ? 'white' : '#FAFAFA' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 700, color: '#081E3C' }}>{item.desc}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'center', color: '#64748B' }}>{item.unit}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{item.qty}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right' }}>{Number(item.rate).toLocaleString()}</td>
+                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800, color: '#081E3C' }}>{Number(item.amount).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
-                <button onClick={() => setSelectedInvoice(null)} style={{ padding: '8px 16px', background: 'white', color: '#64748B', border: '1px solid #CBD5E1', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                  Close
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: 14 }}>
+                <button 
+                  onClick={() => handleInspectMatching(selectedInvoice)}
+                  style={{ padding: '8px 16px', background: '#F0F8FA', color: '#004753', border: '1.5px solid #004753', borderRadius: 8, fontWeight: 800, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Eye size={15} /> Inspect in 3-Way Match Studio <ArrowRight size={14} />
                 </button>
-                {selectedInvoice.status !== 'Approved' && (
-                  <button 
-                    onClick={() => handleApproveInvoice(selectedInvoice.id)}
-                    style={{ padding: '8px 18px', background: 'var(--gradient-brand)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 800, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 14px rgba(0, 71, 83, 0.25)' }}
-                  >
-                    <Check size={16} /> Approve & Authorize ERP Posting
+
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setSelectedInvoice(null)} style={{ padding: '8px 16px', background: 'white', color: '#64748B', border: '1px solid #CBD5E1', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    Close
                   </button>
-                )}
+                  {selectedInvoice.status !== 'Approved' && (
+                    <button 
+                      onClick={() => handleApproveInvoice(selectedInvoice.id)}
+                      style={{ padding: '8px 18px', background: 'var(--gradient-brand)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 800, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 14px rgba(0, 71, 83, 0.25)' }}
+                    >
+                      <Check size={16} /> Approve & Authorize ERP Posting
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
+      {/* Upload Invoice Modal */}
+      <InvoiceUploadModal 
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUploaded={(newInv) => {
+          setSelectedInvoice(newInv);
+        }}
+      />
+
     </div>
   );
 };
+
+export default OcrInvoices;

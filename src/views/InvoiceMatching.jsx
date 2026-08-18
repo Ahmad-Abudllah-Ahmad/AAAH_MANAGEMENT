@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, ZoomIn, ZoomOut, Maximize2, Edit3, MessageSquare, Hand, 
@@ -6,86 +6,57 @@ import {
   FileText, ArrowRight, CornerDownRight, RefreshCw, Layers, Send, X, ExternalLink
 } from 'lucide-react';
 import { Button, StatusPill, ConfidenceBadge, ProcessFlowStepper, Alert } from '../components/ui';
+import { useInvoiceContext } from '../context/InvoiceContext';
 
-const invoicesQueue = [
-  {
-    id: 'INV-24815',
-    project: 'Al Barsha Tower — Substructure',
-    supplier: 'Gulf Ready Mix Concrete LLC',
-    supplierAddress: 'P.O. Box 45120, Al Quoz Industrial 3, Dubai, UAE',
-    supplierConfidence: 99,
-    date: '10/06/2026',
-    dateConfidence: 99,
-    billTo: 'ABC Construction LLC',
-    billToAddress: 'Business Bay, Dubai, UAE',
-    poNumber: 'PO-88102',
-    grnNumber: 'GRN-7731',
-    items: [
-      { id: 1, desc: 'Ready-mix concrete C50', unit: 'm³', qty: 150, rate: 360, amount: 54000, poQty: 150, grnQty: 150, status: 'Matched' },
-      { id: 2, desc: 'Pump hire 42m boom', unit: 'hrs', qty: 12, rate: 450, amount: 5400, poQty: 12, grnQty: 12, status: 'Matched' },
-    ],
-    subtotal: 59400,
-    vat: 2970,
-    total: 62370,
-    hasVariance: false
-  },
-  {
-    id: 'INV-24817',
-    project: 'Al Barsha Tower — Plot 4',
-    supplier: 'Al Noor Building Materials LLC',
-    supplierAddress: 'P.O. Box 12345, Industrial Area 2, Sharjah, UAE',
-    supplierConfidence: 99,
-    date: '12/06/2026',
+export const InvoiceMatching = () => {
+  const { invoicesList, activeMatchingId, setActiveMatchingId, approveInvoice } = useInvoiceContext();
+
+  const matchingQueue = invoicesList.map(inv => ({
+    id: inv.id,
+    project: inv.project || 'Al Barsha Tower — Plot 4',
+    supplier: inv.supplier || inv.vendor,
+    supplierAddress: inv.supplierAddress || 'Dubai, United Arab Emirates',
+    supplierConfidence: inv.confidence || 99,
+    date: inv.date || '12/06/2026',
     dateConfidence: 98,
-    billTo: 'ABC Construction LLC',
-    billToAddress: 'Dubai, United Arab Emirates',
-    poNumber: 'PO-99128',
-    grnNumber: 'GRN-8812',
-    items: [
+    billTo: inv.billTo || 'ABC Construction LLC',
+    billToAddress: inv.billToAddress || 'Dubai, United Arab Emirates',
+    poNumber: inv.poNumber || inv.poMatch || 'PO-99128',
+    grnNumber: inv.grnNumber || 'GRN-8812',
+    items: inv.items || [
       { id: 1, desc: 'Ready-mix concrete C40', unit: 'm³', qty: 120, rate: 340, amount: 40800, poQty: 120, grnQty: 120, status: 'Matched' },
       { id: 2, desc: 'Reinforcement bar 16mm', unit: 'MT', qty: 15, rate: 3250, amount: 48750, poQty: 15, grnQty: 15, status: 'Matched', needsRateReview: true },
       { id: 3, desc: 'Formwork plywood 18mm', unit: 'm²', qty: 500, rate: 85, amount: 42500, poQty: 500, grnQty: 500, status: 'Matched' },
       { id: 4, desc: 'Structural steel section', unit: 'MT', qty: 8, rate: 6800, amount: 54400, poQty: 8, grnQty: 8, status: 'Matched' },
       { id: 5, desc: 'Cement Type I 50kg', unit: 'bags', qty: 260, rate: 115, amount: 29900, poQty: 240, grnQty: 240, status: 'Qty Variance', hasDiscrepancy: true },
     ],
-    subtotal: 216350,
-    vat: 10817.50,
-    total: 227167.50,
-    hasVariance: true
-  },
-  {
-    id: 'INV-24819',
-    project: 'Dubai Marina Luxury Residences',
-    supplier: 'Emirates Steel Industries PJSC',
-    supplierAddress: 'ICAD 1, Musaffah, Abu Dhabi, UAE',
-    supplierConfidence: 100,
-    date: '14/06/2026',
-    dateConfidence: 99,
-    billTo: 'ABC Construction LLC',
-    billToAddress: 'Dubai, United Arab Emirates',
-    poNumber: 'PO-99150',
-    grnNumber: 'GRN-8840',
-    items: [
-      { id: 1, desc: 'High-yield Rebar 25mm Grade 60', unit: 'MT', qty: 45, rate: 3100, amount: 139500, poQty: 45, grnQty: 45, status: 'Matched' },
-      { id: 2, desc: 'Binding wire 18 gauge', unit: 'coils', qty: 80, rate: 120, amount: 9600, poQty: 80, grnQty: 80, status: 'Matched' },
-    ],
-    subtotal: 149100,
-    vat: 7455,
-    total: 156555,
-    hasVariance: false
-  }
-];
+    subtotal: inv.subtotal || 216350,
+    vat: inv.vat || 10817.50,
+    total: inv.total || 227167.50,
+    hasVariance: inv.hasVariance || inv.status === 'Exception',
+    fileUrl: inv.fileUrl,
+    fileName: inv.fileName,
+    isUploaded: inv.isUploaded
+  }));
 
-export const InvoiceMatching = () => {
-  const [currentQueueIndex, setCurrentQueueIndex] = useState(1); // Default to INV-24817 (middle)
-  const currentInvoice = invoicesQueue[currentQueueIndex];
+  const initialIdx = Math.max(0, matchingQueue.findIndex(i => i.id === activeMatchingId));
+  const [currentQueueIndex, setCurrentQueueIndex] = useState(initialIdx !== -1 ? initialIdx : 0);
+
+  useEffect(() => {
+    if (activeMatchingId) {
+      const idx = matchingQueue.findIndex(i => i.id === activeMatchingId);
+      if (idx !== -1) setCurrentQueueIndex(idx);
+    }
+  }, [activeMatchingId, invoicesList.length]);
+
+  const currentInvoice = matchingQueue[currentQueueIndex] || matchingQueue[0];
 
   const [zoom, setZoom] = useState(85);
   const [activeTool, setActiveTool] = useState('hand'); // 'hand' | 'annotate' | 'comment'
   const [hoveredItemId, setHoveredItemId] = useState(null);
   const [selectedItemId, setSelectedItemId] = useState(null);
   
-  // Resolution states for INV-24817
+  // Resolution states for current invoice
   const [varianceResolved, setVarianceResolved] = useState(false);
   const [resolutionType, setResolutionType] = useState(''); // 'accept_grn' | 'routed_approval' | 'credit_note'
   const [rateResolved, setRateResolved] = useState(false);
@@ -108,8 +79,10 @@ export const InvoiceMatching = () => {
     setTimeout(() => {
       setPostingStatus('posting');
       setTimeout(() => {
-        setErpVoucherNumber(`AP-VOUCH-${Math.floor(100000 + Math.random() * 900000)}`);
+        const vouch = `AP-VOUCH-${Math.floor(100000 + Math.random() * 900000)}`;
+        setErpVoucherNumber(vouch);
         setPostingStatus('success');
+        approveInvoice(currentInvoice.id);
       }, 1200);
     }, 1000);
   };

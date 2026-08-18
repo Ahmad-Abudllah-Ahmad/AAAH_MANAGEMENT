@@ -5,106 +5,17 @@ import {
   Download, Play, Search, Filter, UploadCloud, RefreshCw, Eye, 
   ArrowRight, ShieldCheck, Check, Sparkles, X, Plus
 } from 'lucide-react';
-import { Button, StatusPill, ConfidenceBadge } from '../../components/ui';
-
-const initialInboxItems = [
-  { 
-    id: 'msg-001', 
-    sender: 'ap-billing@alnoor-materials.ae', 
-    senderName: 'Al Noor Building Materials LLC',
-    subject: 'Tax Invoice #INV-24817 — Al Barsha Tower Plot 4', 
-    date: '10:42 AM', 
-    attachments: 1, 
-    status: 'Processing',
-    invoiceNumber: 'INV-24817',
-    totalAmount: '227,167.50 AED',
-    confidence: 96,
-    poMatch: 'PO-99128',
-    linesExtracted: 5
-  },
-  { 
-    id: 'msg-002', 
-    sender: 'invoices@gulfreadymix.com', 
-    senderName: 'Gulf Ready Mix Concrete LLC',
-    subject: 'Substructure Pouring Delivery Batch #442', 
-    date: '09:15 AM', 
-    attachments: 2, 
-    status: 'Completed',
-    invoiceNumber: 'INV-24815',
-    totalAmount: '62,370.00 AED',
-    confidence: 99,
-    poMatch: 'PO-88102',
-    linesExtracted: 2
-  },
-  { 
-    id: 'msg-003', 
-    sender: 'accounts@emirates-steel.ae', 
-    senderName: 'Emirates Steel Industries PJSC',
-    subject: 'Monthly Rebar Deliveries June 2026', 
-    date: 'Yesterday', 
-    attachments: 1, 
-    status: 'Completed',
-    invoiceNumber: 'INV-24819',
-    totalAmount: '156,555.00 AED',
-    confidence: 99,
-    poMatch: 'PO-99150',
-    linesExtracted: 2
-  },
-  { 
-    id: 'msg-004', 
-    sender: 'finance@fastfixings.ae', 
-    senderName: 'Fast Fixings Ltd',
-    subject: 'Site Fasteners & Anchors Supply', 
-    date: 'Yesterday', 
-    attachments: 1, 
-    status: 'Failed',
-    invoiceNumber: 'INV-9021',
-    totalAmount: '14,910.00 AED',
-    confidence: 45,
-    poMatch: 'Missing',
-    linesExtracted: 4,
-    failReason: 'Low scan DPI (110 DPI) — Blurred table totals'
-  },
-  { 
-    id: 'msg-005', 
-    sender: 'billing@dutco-formwork.com', 
-    senderName: 'Dutco Formwork Solutions',
-    subject: 'Doka Climbing Rig Jump #11 Lease', 
-    date: 'Aug 10', 
-    attachments: 2, 
-    status: 'Completed',
-    invoiceNumber: 'INV-21044',
-    totalAmount: '118,400.00 AED',
-    confidence: 98,
-    poMatch: 'PO-77412',
-    linesExtracted: 3
-  },
-  { 
-    id: 'msg-006', 
-    sender: 'accounts@logistics-pro.ae', 
-    senderName: 'Logistics Pro Haulage',
-    subject: 'Tower Crane 1 Logistics Delivery Fees', 
-    date: 'Aug 09', 
-    attachments: 1, 
-    status: 'Pending',
-    invoiceNumber: 'INV-19042',
-    totalAmount: '24,500.00 AED',
-    confidence: 88,
-    poMatch: 'PO-66109',
-    linesExtracted: 2
-  },
-];
+import { Button, StatusPill, ConfidenceBadge, InvoiceUploadModal } from '../../components/ui';
+import { useInvoiceContext } from '../../context/InvoiceContext';
 
 export const OcrInbox = () => {
-  const [inboxList, setInboxList] = useState(initialInboxItems);
-  const [activeMsgId, setActiveMsgId] = useState(inboxList[0].id);
+  const { inboxList, setInboxList } = useInvoiceContext();
+  const [activeMsgId, setActiveMsgId] = useState(inboxList[0]?.id || 'msg-001');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   
   const [isScanning, setIsScanning] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
 
   const activeItem = inboxList.find(i => i.id === activeMsgId) || inboxList[0];
 
@@ -390,58 +301,13 @@ export const OcrInbox = () => {
       </div>
 
       {/* Upload Modal */}
-      <AnimatePresence>
-        {showUploadModal && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,30,60,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              style={{ width: 480, background: 'white', borderRadius: 14, padding: 28, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: '#081E3C' }}>
-                  Upload Invoices for Optical Intake
-                </h3>
-                <button onClick={() => setShowUploadModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} /></button>
-              </div>
-
-              <div 
-                onClick={handleSimulateUpload}
-                style={{ 
-                  border: '2px dashed #004753', 
-                  background: '#F0F8FA', 
-                  borderRadius: 12, 
-                  padding: 32, 
-                  textAlign: 'center', 
-                  cursor: isUploading ? 'not-allowed' : 'pointer',
-                  marginBottom: 20 
-                }}
-              >
-                <UploadCloud size={40} color="#004753" style={{ margin: '0 auto 12px auto' }} />
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#081E3C', marginBottom: 4 }}>
-                  {isUploading ? 'Uploading & Processing OCR...' : 'Click to Upload PDF or Drag & Drop'}
-                </div>
-                <div style={{ fontSize: 11.5, color: '#64748B' }}>
-                  Supports single & multi-page tax invoices (PDF, TIFF, PNG up to 25MB)
-                </div>
-
-                {isUploading && (
-                  <div style={{ width: '100%', height: 6, background: '#CBD5E1', borderRadius: 4, marginTop: 16, overflow: 'hidden' }}>
-                    <div style={{ width: `${uploadProgress}%`, height: '100%', background: '#00A9C5', transition: 'width 0.3s' }} />
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <button onClick={() => setShowUploadModal(false)} style={{ padding: '8px 14px', background: 'white', color: '#64748B', border: '1px solid #CBD5E1', borderRadius: 6, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <InvoiceUploadModal 
+        isOpen={showUploadModal} 
+        onClose={() => setShowUploadModal(false)} 
+        onUploaded={(newInv) => {
+          setActiveMsgId(newInv.id);
+        }} 
+      />
 
     </div>
   );
