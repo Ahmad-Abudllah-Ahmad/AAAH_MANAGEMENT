@@ -158,17 +158,25 @@ export const InvoiceMatching = () => {
               {/* View Switcher if fileUrl exists */}
               {currentInvoice.fileUrl && (
                 <div style={{ display: 'flex', gap: 4, background: '#E2E8F0', padding: 2, borderRadius: 6 }}>
+                  {currentInvoice.pageImageUrl && (
+                    <button 
+                      onClick={() => setDocViewMode('overlay')}
+                      style={{ padding: '3px 8px', border: 'none', borderRadius: 4, fontSize: 11, fontWeight: 800, background: docViewMode === 'overlay' ? '#004753' : 'transparent', color: docViewMode === 'overlay' ? 'white' : '#475569', cursor: 'pointer' }}
+                    >
+                      OCR Overlay
+                    </button>
+                  )}
                   <button 
                     onClick={() => setDocViewMode('optical')}
                     style={{ padding: '3px 8px', border: 'none', borderRadius: 4, fontSize: 11, fontWeight: 800, background: docViewMode === 'optical' ? '#004753' : 'transparent', color: docViewMode === 'optical' ? 'white' : '#475569', cursor: 'pointer' }}
                   >
-                    OCR Overlay
+                    Structured Sheet
                   </button>
                   <button 
                     onClick={() => setDocViewMode('pdf')}
                     style={{ padding: '3px 8px', border: 'none', borderRadius: 4, fontSize: 11, fontWeight: 800, background: docViewMode === 'pdf' ? '#004753' : 'transparent', color: docViewMode === 'pdf' ? 'white' : '#475569', cursor: 'pointer' }}
                   >
-                    Original PDF
+                    Raw PDF
                   </button>
                 </div>
               )}
@@ -262,7 +270,7 @@ export const InvoiceMatching = () => {
                 )}
               </AnimatePresence>
 
-              {/* Conditional: Raw PDF View vs Printable Invoice Sheet */}
+              {/* Conditional: Raw PDF View vs Page Image OCR Overlay vs Printable Invoice Sheet */}
               {docViewMode === 'pdf' && currentInvoice.fileUrl ? (
                 <div style={{ width: '100%', height: '100%', minHeight: 580, background: '#081E3C', borderRadius: 8, padding: 8, display: 'flex', flexDirection: 'column' }}>
                   <iframe 
@@ -271,6 +279,53 @@ export const InvoiceMatching = () => {
                     title="Uploaded PDF Document"
                   />
                 </div>
+              ) : currentInvoice.pageImageUrl && docViewMode === 'overlay' ? (
+                <motion.div 
+                  style={{ 
+                    width: 780, 
+                    position: 'relative', 
+                    background: 'white', 
+                    borderRadius: 6, 
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+                    scale: zoom / 100,
+                    transformOrigin: 'top center',
+                    transition: 'scale 0.15s ease-out'
+                  }}
+                >
+                  <img src={currentInvoice.pageImageUrl} alt="Document Scan" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 6 }} />
+                  {currentInvoice.boundingBoxes?.map((box, idx) => (
+                    <div 
+                      key={idx}
+                      style={{
+                        position: 'absolute',
+                        left: `${box.left}%`,
+                        top: `${box.top}%`,
+                        width: `${box.width}%`,
+                        height: `${box.height}%`,
+                        border: `2px solid ${box.color || '#00A9C5'}`,
+                        background: 'rgba(0, 71, 83, 0.1)',
+                        borderRadius: 4,
+                        zIndex: 10
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute',
+                        top: -16,
+                        left: -2,
+                        background: box.color || '#004753',
+                        color: 'white',
+                        fontSize: 9.5,
+                        fontWeight: 800,
+                        padding: '1px 5px',
+                        borderRadius: 3,
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                      }}>
+                        {box.label} [{box.confidence || 98}%]
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
               ) : (
                 /* Printable Invoice Sheet with Exact Field Positions */
                 <motion.div 

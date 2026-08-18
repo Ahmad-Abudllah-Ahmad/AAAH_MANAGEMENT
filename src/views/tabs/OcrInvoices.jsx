@@ -285,6 +285,42 @@ export const OcrInvoices = () => {
                   <div style={{ width: '100%', height: 420, background: '#081E3C', borderRadius: 8, padding: 6 }}>
                     <iframe src={selectedInvoice.fileUrl} style={{ width: '100%', height: '100%', border: 'none', borderRadius: 6, background: 'white' }} title="Uploaded Invoice Document" />
                   </div>
+                ) : selectedInvoice.pageImageUrl && modalViewMode === 'optical' ? (
+                  <div style={{ position: 'relative', background: 'white', borderRadius: 6, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                    <img src={selectedInvoice.pageImageUrl} alt="Document Scan" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 6 }} />
+                    {selectedInvoice.boundingBoxes?.map((box, idx) => (
+                      <div 
+                        key={idx}
+                        style={{
+                          position: 'absolute',
+                          left: `${box.left}%`,
+                          top: `${box.top}%`,
+                          width: `${box.width}%`,
+                          height: `${box.height}%`,
+                          border: `2px solid ${box.color || '#00A9C5'}`,
+                          background: 'rgba(0, 71, 83, 0.1)',
+                          borderRadius: 4,
+                          zIndex: 10
+                        }}
+                      >
+                        <div style={{
+                          position: 'absolute',
+                          top: -14,
+                          left: -2,
+                          background: box.color || '#004753',
+                          color: 'white',
+                          fontSize: 9,
+                          fontWeight: 800,
+                          padding: '1px 4px',
+                          borderRadius: 3,
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        }}>
+                          {box.label} [{box.confidence || 98}%]
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div style={{ background: 'white', padding: 16, borderRadius: 6, border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
