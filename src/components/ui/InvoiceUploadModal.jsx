@@ -672,6 +672,24 @@ export const InvoiceUploadModal = ({ isOpen, onClose, onUploaded }) => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Financial Totals Summary Card */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ width: 280, background: '#F8FAFC', border: '1.5px solid #004753', borderRadius: 8, padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#475569', marginBottom: 4 }}>
+                        <span>Subtotal:</span>
+                        <strong style={{ color: '#081E3C' }}>{Number(parsedPreview.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#475569', marginBottom: 6 }}>
+                        <span>Tax / VAT:</span>
+                        <strong style={{ color: '#081E3C' }}>{Number(parsedPreview.vat).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 900, color: '#004753', paddingTop: 8, borderTop: '1.5px solid #CBD5E1' }}>
+                        <span>Total Due:</span>
+                        <span>{parsedPreview.amount}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
 
