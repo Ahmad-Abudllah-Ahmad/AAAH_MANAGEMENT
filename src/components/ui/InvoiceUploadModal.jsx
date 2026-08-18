@@ -616,22 +616,26 @@ export const InvoiceUploadModal = ({ isOpen, onClose, onUploaded }) => {
               {/* Mode 2: Detailed Extracted Table & Structured Fields */}
               {previewMode === 'structured' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                    <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>EXTRACTED VENDOR</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#081E3C', marginTop: 2 }}>{parsedPreview.vendor}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+                    <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 700 }}>EXTRACTED VENDOR</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#081E3C', marginTop: 2 }}>{parsedPreview.vendor}</div>
                     </div>
-                    <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>INVOICE NUMBER</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#004753', marginTop: 2 }}>{parsedPreview.id}</div>
+                    <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 700 }}>BILL TO / CUSTOMER</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#081E3C', marginTop: 2 }}>{parsedPreview.customer || parsedPreview.billTo || 'Customer Name'}</div>
                     </div>
-                    <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>PO REFERENCE MATCH</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#00A9C5', marginTop: 2 }}>{parsedPreview.poMatch}</div>
+                    <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 700 }}>INVOICE NUMBER</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#004753', marginTop: 2 }}>{parsedPreview.id}</div>
                     </div>
-                    <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>TOTAL AMOUNT (AED)</div>
-                      <div style={{ fontSize: 15, fontWeight: 900, color: '#081E3C', marginTop: 2 }}>{parsedPreview.amount}</div>
+                    <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 700 }}>ISSUE DATE</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: '#00A9C5', marginTop: 2 }}>{parsedPreview.date}</div>
+                    </div>
+                    <div style={{ background: '#F8FAFC', padding: 12, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: 10.5, color: '#64748B', fontWeight: 700 }}>TOTAL AMOUNT</div>
+                      <div style={{ fontSize: 14.5, fontWeight: 900, color: '#081E3C', marginTop: 2 }}>{parsedPreview.amount}</div>
                     </div>
                   </div>
 
