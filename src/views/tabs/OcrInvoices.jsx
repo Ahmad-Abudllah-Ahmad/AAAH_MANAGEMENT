@@ -16,6 +16,7 @@ export const OcrInvoices = () => {
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [modalViewMode, setModalViewMode] = useState('optical'); // 'optical' | 'raw_pdf'
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [exportNotice, setExportNotice] = useState(false);
 
@@ -258,11 +259,34 @@ export const OcrInvoices = () => {
 
               {/* Optical Render Visual Preview with Exact Field Positions */}
               <div style={{ background: '#F8FAFC', borderRadius: 10, border: '1px solid #CBD5E1', padding: 16, marginBottom: 18 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#004753', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <ShieldCheck size={14} color="#00A9C5" /> Document Visual Preview & OCR Layout Mapping
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#004753', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ShieldCheck size={14} color="#00A9C5" /> Document Visual Preview & OCR Layout Mapping
+                  </div>
+                  {selectedInvoice.fileUrl && (
+                    <div style={{ display: 'flex', gap: 4, background: '#E2E8F0', padding: 2, borderRadius: 6 }}>
+                      <button
+                        onClick={() => setModalViewMode('optical')}
+                        style={{ padding: '3px 8px', border: 'none', borderRadius: 4, fontSize: 10.5, fontWeight: 800, background: modalViewMode === 'optical' ? '#004753' : 'transparent', color: modalViewMode === 'optical' ? 'white' : '#475569', cursor: 'pointer' }}
+                      >
+                        OCR Bounding Boxes
+                      </button>
+                      <button
+                        onClick={() => setModalViewMode('raw_pdf')}
+                        style={{ padding: '3px 8px', border: 'none', borderRadius: 4, fontSize: 10.5, fontWeight: 800, background: modalViewMode === 'raw_pdf' ? '#004753' : 'transparent', color: modalViewMode === 'raw_pdf' ? 'white' : '#475569', cursor: 'pointer' }}
+                      >
+                        Original Uploaded PDF
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                <div style={{ background: 'white', padding: 16, borderRadius: 6, border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+                {modalViewMode === 'raw_pdf' && selectedInvoice.fileUrl ? (
+                  <div style={{ width: '100%', height: 420, background: '#081E3C', borderRadius: 8, padding: 6 }}>
+                    <iframe src={selectedInvoice.fileUrl} style={{ width: '100%', height: '100%', border: 'none', borderRadius: 6, background: 'white' }} title="Uploaded Invoice Document" />
+                  </div>
+                ) : (
+                  <div style={{ background: 'white', padding: 16, borderRadius: 6, border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                     <div style={{ border: '1.5px solid #00A9C5', background: '#F0F8FA', padding: '8px 12px', borderRadius: 4, maxWidth: 320 }}>
                       <div style={{ fontSize: 10, color: '#00556A', fontWeight: 800 }}>SUPPLIER / المورد</div>
@@ -303,6 +327,7 @@ export const OcrInvoices = () => {
                     </table>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Action Buttons */}

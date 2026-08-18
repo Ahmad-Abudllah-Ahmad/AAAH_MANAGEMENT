@@ -53,6 +53,7 @@ export const InvoiceMatching = () => {
 
   const [zoom, setZoom] = useState(85);
   const [activeTool, setActiveTool] = useState('hand'); // 'hand' | 'annotate' | 'comment'
+  const [docViewMode, setDocViewMode] = useState('optical'); // 'optical' | 'pdf'
   const [hoveredItemId, setHoveredItemId] = useState(null);
   const [selectedItemId, setSelectedItemId] = useState(null);
   
@@ -142,17 +143,35 @@ export const InvoiceMatching = () => {
                   <ChevronLeft size={16} color="#081E3C" />
                 </button>
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: '#081E3C' }}>
-                  {currentQueueIndex + 1} / {invoicesQueue.length}
+                  {currentQueueIndex + 1} / {matchingQueue.length}
                 </span>
                 <button 
-                  onClick={() => setCurrentQueueIndex(Math.min(invoicesQueue.length - 1, currentQueueIndex + 1))}
-                  disabled={currentQueueIndex === invoicesQueue.length - 1}
-                  style={{ border: '1px solid #CBD5E1', background: 'white', borderRadius: 6, padding: '4px 8px', cursor: currentQueueIndex === invoicesQueue.length - 1 ? 'not-allowed' : 'pointer', opacity: currentQueueIndex === invoicesQueue.length - 1 ? 0.5 : 1, display: 'flex', alignItems: 'center' }}
+                  onClick={() => setCurrentQueueIndex(Math.min(matchingQueue.length - 1, currentQueueIndex + 1))}
+                  disabled={currentQueueIndex === matchingQueue.length - 1}
+                  style={{ border: '1px solid #CBD5E1', background: 'white', borderRadius: 6, padding: '4px 8px', cursor: currentQueueIndex === matchingQueue.length - 1 ? 'not-allowed' : 'pointer', opacity: currentQueueIndex === matchingQueue.length - 1 ? 0.5 : 1, display: 'flex', alignItems: 'center' }}
                 >
                   <ChevronRight size={16} color="#081E3C" />
                 </button>
                 <span style={{ fontSize: 11.5, color: '#64748B', marginLeft: 6 }}>({currentInvoice.id})</span>
               </div>
+
+              {/* View Switcher if fileUrl exists */}
+              {currentInvoice.fileUrl && (
+                <div style={{ display: 'flex', gap: 4, background: '#E2E8F0', padding: 2, borderRadius: 6 }}>
+                  <button 
+                    onClick={() => setDocViewMode('optical')}
+                    style={{ padding: '3px 8px', border: 'none', borderRadius: 4, fontSize: 11, fontWeight: 800, background: docViewMode === 'optical' ? '#004753' : 'transparent', color: docViewMode === 'optical' ? 'white' : '#475569', cursor: 'pointer' }}
+                  >
+                    OCR Overlay
+                  </button>
+                  <button 
+                    onClick={() => setDocViewMode('pdf')}
+                    style={{ padding: '3px 8px', border: 'none', borderRadius: 4, fontSize: 11, fontWeight: 800, background: docViewMode === 'pdf' ? '#004753' : 'transparent', color: docViewMode === 'pdf' ? 'white' : '#475569', cursor: 'pointer' }}
+                  >
+                    Original PDF
+                  </button>
+                </div>
+              )}
 
               {/* Tools & Zoom */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -243,19 +262,29 @@ export const InvoiceMatching = () => {
                 )}
               </AnimatePresence>
 
-              {/* Printable Invoice Sheet */}
-              <motion.div 
-                style={{ 
-                  width: 780, 
-                  background: 'white', 
-                  padding: 40,
-                  borderRadius: 4,
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-                  scale: zoom / 100,
-                  transformOrigin: 'top center',
-                  transition: 'scale 0.15s ease-out'
-                }}
-              >
+              {/* Conditional: Raw PDF View vs Printable Invoice Sheet */}
+              {docViewMode === 'pdf' && currentInvoice.fileUrl ? (
+                <div style={{ width: '100%', height: '100%', minHeight: 580, background: '#081E3C', borderRadius: 8, padding: 8, display: 'flex', flexDirection: 'column' }}>
+                  <iframe 
+                    src={currentInvoice.fileUrl} 
+                    style={{ width: '100%', height: '100%', minHeight: 560, border: 'none', borderRadius: 6, background: 'white' }} 
+                    title="Uploaded PDF Document"
+                  />
+                </div>
+              ) : (
+                /* Printable Invoice Sheet with Exact Field Positions */
+                <motion.div 
+                  style={{ 
+                    width: 780, 
+                    background: 'white', 
+                    padding: 40,
+                    borderRadius: 4,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                    scale: zoom / 100,
+                    transformOrigin: 'top center',
+                    transition: 'scale 0.15s ease-out'
+                  }}
+                >
                 {/* Invoice Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 36, alignItems: 'flex-start' }}>
                   {/* Supplier Box */}
@@ -466,6 +495,7 @@ export const InvoiceMatching = () => {
                   </tbody>
                 </table>
               </motion.div>
+              )}
             </div>
           </div>
         </div>
