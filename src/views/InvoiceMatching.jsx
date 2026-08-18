@@ -95,12 +95,102 @@ export const InvoiceMatching = () => {
     setNewComment('');
   };
 
-  // Resolved dynamic values for item 5
-  const item5Qty = varianceResolved && resolutionType === 'accept_grn' ? 240 : 260;
-  const item5Amount = item5Qty * 115;
-  const calculatedSubtotal = varianceResolved && resolutionType === 'accept_grn' ? 214050 : currentInvoice.subtotal;
-  const calculatedVat = calculatedSubtotal * 0.05;
-  const calculatedTotal = calculatedSubtotal + calculatedVat;
+  const [editableItems, setEditableItems] = useState([]);
+  const [editableMeta, setEditableMeta] = useState({
+    supplier: '',
+    id: '',
+    date: '',
+    billTo: '',
+    poNumber: ''
+  });
+
+  useEffect(() => {
+    if (currentInvoice) {
+      setEditableMeta({
+        supplier: currentInvoice.supplier,
+        id: currentInvoice.id,
+        date: currentInvoice.date,
+        billTo: currentInvoice.billTo,
+        poNumber: currentInvoice.poNumber
+      });
+
+      if (currentInvoice.items) {
+        setEditableItems(currentInvoice.items.map((item, idx) => ({
+          ...item,
+          id: item.id || idx + 1,
+          desc: item.desc || 'Line Item',
+          unit: item.unit || 'ea',
+          qty: parseFloat(item.qty) !== undefined && !isNaN(parseFloat(item.qty)) ? parseFloat(item.qty) : 1,
+          rate: parseFloat(item.rate) !== undefined && !isNaN(parseFloat(item.rate)) ? parseFloat(item.rate) : 0,
+          amount: parseFloat(item.amount) !== undefined && !isNaN(parseFloat(item.amount)) 
+            ? parseFloat(item.amount) 
+            : ((parseFloat(item.qty) || 1) * (parseFloat(item.rate) || 0)),
+          poQty: item.poQty !== undefined ? parseFloat(item.poQty) : parseFloat(item.qty) || 1,
+          grnQty: item.grnQty !== undefined ? parseFloat(item.grnQty) : parseFloat(item.qty) || 1,
+          status: item.status || 'Matched',
+          hasDiscrepancy: !!item.hasDiscrepancy
+        })));
+        setVarianceResolved(false);
+        setResolutionType('');
+      }
+    }
+  }, [currentInvoice?.id]);
+
+  const handleUpdateItem = (itemId, field, value) => {
+    setEditableItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        const updated = { ...item, [field]: value };
+        const numQty = parseFloat(updated.qty) || 0;
+        const numRate = parseFloat(updated.rate) || 0;
+
+        if (field === 'qty' || field === 'rate') {
+          updated.amount = parseFloat((numQty * numRate).toFixed(2));
+        } else if (field === 'amount') {
+          const numAmount = parseFloat(value) || 0;
+          updated.amount = numAmount;
+          if (numQty > 0) {
+            updated.rate = parseFloat((numAmount / numQty).toFixed(2));
+          }
+        }
+
+        if (updated.poQty !== undefined) {
+          updated.hasDiscrepancy = numQty !== updated.poQty;
+          updated.status = numQty === updated.poQty ? 'Matched' : 'Qty Variance';
+        }
+
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  const handleResolveVariance = (type) => {
+    setResolutionType(type);
+    setVarianceResolved(true);
+    setShowVarianceModal(false);
+    if (type === 'accept_grn') {
+      setEditableItems(prev => prev.map(item => {
+        if (item.hasDiscrepancy && item.poQty !== undefined) {
+          const updatedQty = item.poQty;
+          const updatedAmount = parseFloat((updatedQty * item.rate).toFixed(2));
+          return {
+            ...item,
+            qty: updatedQty,
+            amount: updatedAmount,
+            hasDiscrepancy: false,
+            status: 'Matched'
+          };
+        }
+        return item;
+      }));
+    }
+  };
+
+  // Real-time calculated sums
+  const calculatedSubtotal = editableItems.reduce((acc, it) => acc + (parseFloat(it.amount) || 0), 0);
+  const calculatedVat = parseFloat((calculatedSubtotal * 0.05).toFixed(2));
+  const calculatedTotal = parseFloat((calculatedSubtotal + calculatedVat).toFixed(2));
+  const hasRemainingExceptions = editableItems.some(it => it.hasDiscrepancy && !varianceResolved);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -392,14 +482,10 @@ export const InvoiceMatching = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {currentInvoice.items.map((item, index) => {
+                    {editableItems.map((item, index) => {
                       const isHovered = hoveredItemId === item.id;
                       const isSelected = selectedItemId === item.id;
                       const isDiscrepant = item.hasDiscrepancy && !varianceResolved;
-
-                      // Display values for item 5
-                      const displayQty = item.id === 5 ? item5Qty : item.qty;
-                      const displayAmount = item.id === 5 ? item5Amount : item.amount;
 
                       return (
                         <tr 
@@ -419,110 +505,100 @@ export const InvoiceMatching = () => {
                               : isHovered || isSelected 
                               ? '4px solid #00A9C5' 
                               : '4px solid transparent',
-                            cursor: 'pointer',
                             transition: 'all 0.15s'
                           }}
                         >
-                          <td style={{ padding: '10px 10px', color: '#64748B', fontWeight: 600 }}>{index + 1}</td>
-                          <td style={{ padding: '10px 10px', fontWeight: 700, color: '#081E3C' }}>
+                          <td style={{ padding: '8px 10px', color: '#64748B', fontWeight: 600 }}>{index + 1}</td>
+                          <td style={{ padding: '8px 10px', fontWeight: 700, color: '#081E3C' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              {item.desc}
+                              <input
+                                type="text"
+                                value={item.desc}
+                                onChange={(e) => handleUpdateItem(item.id, 'desc', e.target.value)}
+                                style={{ border: '1px solid transparent', background: 'transparent', width: '100%', fontWeight: 700, color: '#081E3C', outline: 'none', padding: '2px 4px', borderRadius: 4 }}
+                                title="Click to edit item description"
+                              />
                               {isDiscrepant && (
-                                <span style={{ fontSize: 10, background: '#FEE2E2', color: '#B91C1C', padding: '1px 5px', borderRadius: 4, fontWeight: 800 }}>
+                                <span style={{ fontSize: 10, background: '#FEE2E2', color: '#B91C1C', padding: '1px 5px', borderRadius: 4, fontWeight: 800, whiteSpace: 'nowrap' }}>
                                   VARIANCE
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td style={{ padding: '10px 10px', textAlign: 'center', color: '#475569' }}>{item.unit}</td>
-                          
-                          {/* Qty Column */}
-                          <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: isDiscrepant ? '#DC2626' : '#081E3C' }}>
-                            {displayQty.toFixed(2)}
+                          <td style={{ padding: '8px 10px', textAlign: 'center', color: '#475569' }}>
+                            <input
+                              type="text"
+                              value={item.unit}
+                              onChange={(e) => handleUpdateItem(item.id, 'unit', e.target.value)}
+                              style={{ border: '1px solid transparent', background: 'transparent', width: 45, textAlign: 'center', color: '#475569', outline: 'none', padding: '2px 2px', borderRadius: 4 }}
+                              title="Click to edit unit"
+                            />
                           </td>
                           
-                          {/* Unit Rate Column with Interactive Popover */}
-                          <td style={{ padding: '10px 10px', textAlign: 'right', position: 'relative' }}>
-                            {item.needsRateReview ? (
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <motion.div 
-                                  onClick={(e) => { e.stopPropagation(); setShowRatePopover(true); }}
-                                  style={{
-                                    border: rateResolved ? '1.5px solid #00A86B' : '1.5px solid #D97706',
-                                    background: rateResolved ? '#ECFDF5' : '#FEF3C7',
-                                    padding: '3px 6px',
-                                    borderRadius: 4,
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    fontWeight: 700,
-                                    color: rateResolved ? '#065F46' : '#92400E'
-                                  }}
-                                  animate={!rateResolved ? { scale: [1, 1.03, 1] } : {}}
-                                  transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                  {rateResolved ? customRate : Number(customRate).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                  {!rateResolved ? (
-                                    <ConfidenceBadge value={96} label="review" />
-                                  ) : (
-                                    <Check size={12} color="#059669" strokeWidth={3} />
-                                  )}
-                                </motion.div>
-
-                                {/* Rate Confirmation Popover */}
-                                <AnimatePresence>
-                                  {showRatePopover && (
-                                    <motion.div
-                                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                                      exit={{ opacity: 0, scale: 0.95 }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      style={{
-                                        position: 'absolute', top: 38, right: 0, zIndex: 60,
-                                        background: 'white', padding: 16, borderRadius: 10,
-                                        boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-                                        width: 250, border: '1px solid #004753', textAlign: 'left'
-                                      }}
-                                    >
-                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                        <span style={{ fontSize: 12, fontWeight: 800, color: '#081E3C' }}>Confirm Extracted Rate</span>
-                                        <button onClick={() => setShowRatePopover(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
-                                      </div>
-                                      <div style={{ fontSize: 11, color: '#64748B', marginBottom: 8 }}>
-                                        OCR extracted <strong>3,250.00 AED</strong> with 96% confidence. PO agreed rate is <strong>3,250.00 AED</strong>.
-                                      </div>
-                                      <div style={{ marginBottom: 12 }}>
-                                        <label style={{ fontSize: 11, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>Unit Rate (AED):</label>
-                                        <input 
-                                          type="text" 
-                                          value={customRate} 
-                                          onChange={(e) => setCustomRate(e.target.value)}
-                                          style={{ width: '100%', padding: '6px 8px', fontSize: 12, fontWeight: 700, border: '1px solid #CBD5E1', borderRadius: 4 }}
-                                        />
-                                      </div>
-                                      <div style={{ display: 'flex', gap: 6 }}>
-                                        <button 
-                                          onClick={() => { setRateResolved(true); setShowRatePopover(false); }}
-                                          style={{ flex: 1, background: 'var(--gradient-brand)', color: 'white', border: 'none', borderRadius: 4, padding: '6px 10px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(0, 71, 83, 0.25)' }}
-                                        >
-                                          Confirm Rate
-                                        </button>
-                                      </div>
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-                            ) : (
-                              <span style={{ fontWeight: 600, color: '#334155' }}>
-                                {item.rate.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                              </span>
-                            )}
+                          {/* Qty Column with Live Input */}
+                          <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.qty}
+                              onChange={(e) => handleUpdateItem(item.id, 'qty', e.target.value)}
+                              style={{
+                                width: 68,
+                                textAlign: 'right',
+                                fontWeight: 700,
+                                color: isDiscrepant ? '#DC2626' : '#081E3C',
+                                border: isDiscrepant ? '1.5px solid #FCA5A5' : '1px solid #E2E8F0',
+                                background: isDiscrepant ? '#FEF2F2' : '#F8FAFC',
+                                borderRadius: 4,
+                                padding: '3px 4px',
+                                outline: 'none'
+                              }}
+                              title="Click to edit quantity — recalculates line amount and invoice total automatically"
+                            />
+                          </td>
+                          
+                          {/* Unit Rate Column with Live Input */}
+                          <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.rate}
+                              onChange={(e) => handleUpdateItem(item.id, 'rate', e.target.value)}
+                              style={{
+                                width: 85,
+                                textAlign: 'right',
+                                fontWeight: 600,
+                                color: '#334155',
+                                border: '1px solid #E2E8F0',
+                                background: '#F8FAFC',
+                                borderRadius: 4,
+                                padding: '3px 4px',
+                                outline: 'none'
+                              }}
+                              title="Click to edit unit rate — recalculates line amount and invoice total automatically"
+                            />
                           </td>
 
-                          {/* Amount Column */}
-                          <td style={{ padding: '10px 10px', textAlign: 'right', fontWeight: 700, color: '#081E3C' }}>
-                            {displayAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          {/* Amount Column with Live Input */}
+                          <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.amount}
+                              onChange={(e) => handleUpdateItem(item.id, 'amount', e.target.value)}
+                              style={{
+                                width: 95,
+                                textAlign: 'right',
+                                fontWeight: 800,
+                                color: '#081E3C',
+                                border: '1px solid #CBD5E1',
+                                background: '#F0F8FA',
+                                borderRadius: 4,
+                                padding: '3px 4px',
+                                outline: 'none'
+                              }}
+                              title="Click to edit line amount directly — recalculates unit rate and invoice total automatically"
+                            />
                           </td>
                         </tr>
                       );
@@ -530,20 +606,22 @@ export const InvoiceMatching = () => {
 
                     {/* Totals Summary */}
                     <tr style={{ background: '#F8FAFC', fontWeight: 700, borderTop: '2px solid #CBD5E1' }}>
-                      <td colSpan={5} style={{ padding: '8px 10px', textAlign: 'right', color: '#475569' }}>Subtotal</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#081E3C' }}>
+                      <td colSpan={5} style={{ padding: '8px 10px', textAlign: 'right', color: '#475569' }}>
+                        Subtotal <span style={{ fontSize: 10, color: '#00A9C5', fontWeight: 700 }}>(Live Recalculated)</span>
+                      </td>
+                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#081E3C', fontWeight: 800 }}>
                         {calculatedSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
                       <td colSpan={5} style={{ padding: '8px 10px', textAlign: 'right', color: '#475569' }}>VAT 5%</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#081E3C' }}>
+                      <td style={{ padding: '8px 10px', textAlign: 'right', color: '#081E3C', fontWeight: 800 }}>
                         {calculatedVat.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
                     <tr style={{ background: '#E6F4F7', fontWeight: 900, fontSize: 14 }}>
                       <td colSpan={5} style={{ padding: '10px 10px', textAlign: 'right', color: '#004753' }}>Total (AED)</td>
-                      <td style={{ padding: '10px 10px', textAlign: 'right', color: '#004753' }}>
+                      <td style={{ padding: '10px 10px', textAlign: 'right', color: '#004753', fontSize: 15 }}>
                         {calculatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
@@ -584,13 +662,10 @@ export const InvoiceMatching = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentInvoice.items.map((item) => {
+                  {editableItems.map((item) => {
                     const isHovered = hoveredItemId === item.id;
                     const isSelected = selectedItemId === item.id;
                     const isDiscrepant = item.hasDiscrepancy && !varianceResolved;
-
-                    const displayInvQty = item.id === 5 ? item5Qty : item.qty;
-                    const displayInvAmount = item.id === 5 ? item5Amount : item.amount;
 
                     return (
                       <tr 
@@ -621,22 +696,22 @@ export const InvoiceMatching = () => {
                         {/* PO Column */}
                         <td style={{ padding: '10px 6px', textAlign: 'center' }}>
                           <div style={{ fontWeight: 700, color: '#081E3C' }}>{item.poQty} {item.unit}</div>
-                          <div style={{ fontSize: 10.5, color: '#64748B' }}>{(item.poQty * item.rate).toLocaleString()} AED</div>
+                          <div style={{ fontSize: 10.5, color: '#64748B' }}>{(item.poQty * item.rate).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED</div>
                         </td>
 
                         {/* GRN Column */}
                         <td style={{ padding: '10px 6px', textAlign: 'center' }}>
                           <div style={{ fontWeight: 700, color: '#081E3C' }}>{item.grnQty} {item.unit}</div>
-                          <div style={{ fontSize: 10.5, color: '#64748B' }}>{(item.grnQty * item.rate).toLocaleString()} AED</div>
+                          <div style={{ fontSize: 10.5, color: '#64748B' }}>{(item.grnQty * item.rate).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED</div>
                         </td>
 
-                        {/* Invoice Column */}
+                        {/* Invoice Column with Live Real-time Values */}
                         <td style={{ padding: '10px 6px', textAlign: 'center' }}>
                           <div style={{ fontWeight: 700, color: isDiscrepant ? '#DC2626' : '#081E3C' }}>
-                            {displayInvQty} {item.unit}
+                            {item.qty} {item.unit}
                           </div>
-                          <div style={{ fontSize: 10.5, color: isDiscrepant ? '#DC2626' : '#64748B' }}>
-                            {displayInvAmount.toLocaleString()} AED
+                          <div style={{ fontSize: 10.5, color: isDiscrepant ? '#DC2626' : '#64748B', fontWeight: 700 }}>
+                            {Number(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED
                           </div>
                         </td>
 
@@ -651,8 +726,6 @@ export const InvoiceMatching = () => {
                                 <span style={{ fontSize: 9.5, color: '#DC2626', fontWeight: 800 }}>Click to Fix</span>
                               </div>
                             )
-                          ) : item.needsRateReview && !rateResolved ? (
-                            <StatusPill status="warning" label="Rate Check" />
                           ) : (
                             <StatusPill status="success" label="Matched" />
                           )}
@@ -665,7 +738,7 @@ export const InvoiceMatching = () => {
             </div>
 
             {/* Discrepancy Alert Banner */}
-            {currentInvoice.hasVariance && !varianceResolved && (
+            {hasRemainingExceptions && (
               <motion.div 
                 initial={{ opacity: 0, y: 6 }} 
                 animate={{ opacity: 1, y: 0 }}
@@ -686,10 +759,10 @@ export const InvoiceMatching = () => {
                   </div>
                   <div>
                     <div style={{ fontSize: 12.5, fontWeight: 800, color: '#991B1B' }}>
-                      1 Discrepancy Flagged on Line #5 (Cement Type I)
+                      Quantity / Amount Variance Detected
                     </div>
                     <div style={{ fontSize: 11, color: '#7F1D1D' }}>
-                      Billed 260 bags vs GRN-8812 received 240 bags (+20 bags / +2,300 AED).
+                      Invoice values differ from PO/GRN. Edit table directly or click Resolve to reconcile.
                     </div>
                   </div>
                 </div>
@@ -703,7 +776,7 @@ export const InvoiceMatching = () => {
             )}
 
             {/* Resolved Success Banner */}
-            {varianceResolved && (
+            {!hasRemainingExceptions && (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.98 }} 
                 animate={{ opacity: 1, scale: 1 }}
@@ -724,21 +797,23 @@ export const InvoiceMatching = () => {
                   </div>
                   <div>
                     <div style={{ fontSize: 12.5, fontWeight: 800, color: '#065F46' }}>
-                      Discrepancy Successfully Resolved
+                      All Line Items Reconciled & Validated
                     </div>
                     <div style={{ fontSize: 11, color: '#047857' }}>
-                      {resolutionType === 'accept_grn' && 'Accepted GRN received quantity (240 bags). Invoice total adjusted to 224,752.50 AED.'}
-                      {resolutionType === 'routed_approval' && 'Routed for secondary site manager sign-off (Approval Ticket #APP-88419).'}
-                      {resolutionType === 'credit_note' && 'Automated Credit Note request sent to Al Noor Building Materials LLC.'}
+                      {resolutionType === 'accept_grn' 
+                        ? 'Accepted GRN received quantities. Invoice total adjusted.'
+                        : `Live totals verified against PO & GRN: ${calculatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED.`}
                     </div>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setShowVarianceModal(true)}
-                  style={{ background: '#065F46', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-                >
-                  Change
-                </button>
+                {varianceResolved && (
+                  <button 
+                    onClick={() => setShowVarianceModal(true)}
+                    style={{ background: '#065F46', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Change
+                  </button>
+                )}
               </motion.div>
             )}
 
@@ -748,7 +823,7 @@ export const InvoiceMatching = () => {
                 <div>
                   <div style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>Auto-Validated Match</div>
                   <div style={{ fontSize: 24, fontWeight: 900, color: '#004753' }}>
-                    {varianceResolved || !currentInvoice.hasVariance ? '100%' : '94.2%'}
+                    {!hasRemainingExceptions ? '100%' : '94.2%'}
                   </div>
                 </div>
                 <ShieldCheck size={28} color="#00A9C5" />
@@ -757,11 +832,11 @@ export const InvoiceMatching = () => {
               <div style={{ flex: 1, padding: 14, background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>Exceptions Remaining</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: varianceResolved || !currentInvoice.hasVariance ? '#00A86B' : '#DC2626' }}>
-                    {varianceResolved || !currentInvoice.hasVariance ? '0' : '1'}
+                  <div style={{ fontSize: 24, fontWeight: 900, color: !hasRemainingExceptions ? '#00A86B' : '#DC2626' }}>
+                    {!hasRemainingExceptions ? '0' : '1'}
                   </div>
                 </div>
-                <AlertTriangle size={26} color={varianceResolved || !currentInvoice.hasVariance ? '#00A86B' : '#DC2626'} />
+                <AlertTriangle size={26} color={!hasRemainingExceptions ? '#00A86B' : '#DC2626'} />
               </div>
             </div>
 
@@ -769,22 +844,22 @@ export const InvoiceMatching = () => {
             <div style={{ display: 'flex', gap: 12, marginTop: 'auto', paddingTop: 10 }}>
               <button 
                 onClick={handlePostERP}
-                disabled={(currentInvoice.hasVariance && !varianceResolved) || postingStatus !== 'idle'}
+                disabled={hasRemainingExceptions || postingStatus !== 'idle'}
                 style={{ 
                   flex: 1.2, 
-                  background: (currentInvoice.hasVariance && !varianceResolved) ? 'linear-gradient(135deg, #94A3B8 0%, #64748B 100%)' : 'var(--gradient-brand)', 
+                  background: hasRemainingExceptions ? 'linear-gradient(135deg, #94A3B8 0%, #64748B 100%)' : 'var(--gradient-brand)', 
                   color: 'white', 
                   border: 'none', 
                   borderRadius: 8, 
                   padding: '12px 18px', 
                   fontSize: 13.5, 
                   fontWeight: 800, 
-                  cursor: (currentInvoice.hasVariance && !varianceResolved) ? 'not-allowed' : 'pointer',
+                  cursor: hasRemainingExceptions ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  boxShadow: (currentInvoice.hasVariance && !varianceResolved) ? 'none' : '0 4px 14px rgba(0, 71, 83, 0.25)',
+                  boxShadow: hasRemainingExceptions ? 'none' : '0 4px 14px rgba(0, 71, 83, 0.25)',
                   transition: 'all 0.2s'
                 }}
               >
