@@ -49,7 +49,7 @@ export async function parsePdfDocument(file) {
         const [canvasX, canvasY] = viewport.convertToViewportPoint(tx, ty);
         
         const fontSize = Math.hypot(item.transform[0], item.transform[1]) * viewport.scale;
-        const itemWidthPx = (item.width || (item.str.length * 6)) * viewport.scale;
+        const itemWidthPx = (item.width || (item.str.length * fontSize * 0.55)) * viewport.scale;
         const itemHeightPx = Math.max(fontSize, (item.height || 10) * viewport.scale);
         
         const leftPx = canvasX;
@@ -73,9 +73,9 @@ export async function parsePdfDocument(file) {
       }
     }
     
-    // 2. If PDF has few or no digital text tokens (scanned/raster PDF), run Tesseract OCR on rendered canvas
+    // 2. If PDF has few or no digital text tokens (scanned/raster PDF), run Tesseract OCR on rendered data URL
     if (tokens.length < 5) {
-      tokens = await runTesseractOnCanvas(canvas);
+      tokens = await runTesseractOnImage(pageImageUrl, canvas.width, canvas.height);
     }
     
     return analyzeDocumentStructure(tokens, pageImageUrl, file.name, file.type);
@@ -102,7 +102,7 @@ export async function parseImageDocument(file) {
           ctx.drawImage(img, 0, 0);
           const pageImageUrl = canvas.toDataURL('image/png');
           
-          const tokens = await runTesseractOnCanvas(canvas);
+          const tokens = await runTesseractOnImage(pageImageUrl, canvas.width, canvas.height);
           const result = analyzeDocumentStructure(tokens, pageImageUrl, file.name, file.type);
           resolve(result);
         };
@@ -118,14 +118,12 @@ export async function parseImageDocument(file) {
 }
 
 /**
- * Runs Tesseract OCR on a canvas and extracts words with bounding boxes
+ * Runs Tesseract OCR on an image data URL and extracts words with bounding boxes
  */
-async function runTesseractOnCanvas(canvas) {
+async function runTesseractOnImage(imageDataUrl, canvasWidth, canvasHeight) {
   try {
-    const { data } = await Tesseract.recognize(canvas, 'eng');
+    const { data } = await Tesseract.recognize(imageDataUrl, 'eng');
     const tokens = [];
-    const canvasWidth = canvas.width;
-    const canvasHeight = canvas.height;
     
     for (const word of (data.words || [])) {
       if (!word.text || !word.text.trim()) continue;
@@ -177,12 +175,12 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   if (invoiceTitleToken) {
     invoiceTokens.push(invoiceTitleToken);
     
-    // Find tokens immediately below or adjacent to the invoice title (within horizontal < 30% and vertical < 12%)
+    // Find tokens strictly below or adjacent to invoice title
     const nearInvoiceTokens = tokens.filter(t => 
       t !== invoiceTitleToken &&
       t.top >= invoiceTitleToken.top - 1 &&
-      t.top <= invoiceTitleToken.bottom + 10 &&
-      Math.abs(t.left - invoiceTitleToken.left) < 30 &&
+      t.top <= invoiceTitleToken.bottom + 8 &&
+      Math.abs(t.left - invoiceTitleToken.left) < 25 &&
       !t.text.toUpperCase().includes('LOGO') &&
       !t.text.toUpperCase().includes('BILL')
     );
@@ -197,7 +195,6 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
     
     boundingBoxes.push(computeUnionBox(invoiceTokens, 'INVOICE NO', invoiceId, '#00A86B', 99));
   } else {
-    // Search top for standalone invoice ID
     const invToken = tokens.find(t => /(?:INV[-_ ]?[0-9A-Z]{4,10})/i.test(t.text) && t.top < 35);
     if (invToken) {
       invoiceId = invToken.text;
@@ -206,14 +203,14 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   }
 
   // ========================================================
-  // 2. IDENTIFY TABLE HEADER BOUNDARIES (To avoid leaking into columns above!)
+  // 2. IDENTIFY TABLE HEADER (Column Keywords: Date, Description, Price, QTY, Total)
   // ========================================================
   const tableHeaderTokens = tokens.filter(t => {
     const u = t.text.toUpperCase();
-    return (u === 'DESCRIPTION' || u === 'ITEM' || u === 'PRICE' || u === 'QTY' || u === 'QUANTITY' || u === 'TOTAL' || u === 'DATE' || u === 'RATE' || u === 'AMOUNT') && t.top > 25 && t.top < 65;
+    return (u === 'DESCRIPTION' || u === 'ITEM' || u === 'PRICE' || u === 'QTY' || u === 'QUANTITY' || u === 'TOTAL' || u === 'DATE' || u === 'RATE' || u === 'AMOUNT') && t.top > 30 && t.top < 65;
   });
   
-  let tableHeaderTop = 38;
+  let tableHeaderTop = 41.5;
   if (tableHeaderTokens.length >= 2) {
     tableHeaderTop = Math.min(...tableHeaderTokens.map(t => t.top));
   }
@@ -226,7 +223,7 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
     return (u.includes('SUBTOTAL') || u.includes('TAX') || u.includes('VAT') || u.includes('TOTAL DUE') || u.includes('BALANCE DUE') || (u === 'TOTAL' && t.top > 60)) && t.top > 55;
   });
 
-  let totalsSectionTop = 100;
+  let totalsSectionTop = 68.5;
   let totalDueStr = '$0.00';
   let totalDueNum = 0;
   let subtotalNum = 0;
@@ -236,10 +233,10 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
     totalsSectionTop = Math.min(...totalsTokens.map(t => t.top));
     const totalsSectionBottom = Math.max(...totalsTokens.map(t => t.bottom));
     
-    // Also include values/amounts adjacent to these labels on the right
+    // Total block tokens strictly inside the summary zone
     const totalsBlockTokens = tokens.filter(t => 
-      t.top >= totalsSectionTop - 2 &&
-      t.bottom <= totalsSectionBottom + 6 &&
+      t.top >= totalsSectionTop - 1.5 &&
+      t.bottom <= totalsSectionBottom + 4 &&
       t.left >= Math.min(...totalsTokens.map(tok => tok.left)) - 4 &&
       !t.text.toLowerCase().includes('payment') &&
       !t.text.toLowerCase().includes('thank')
@@ -266,7 +263,7 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   }
 
   // ========================================================
-  // 4. BILL FROM / VENDOR BLOCK (Column 1, strictly above tableHeaderTop!)
+  // 4. BILL FROM / VENDOR BLOCK (Column 1: left < 36%, strictly above tableHeaderTop)
   // ========================================================
   const billFromToken = tokens.find(t => 
     (t.text.toUpperCase().includes('BILL FROM') || t.text.toUpperCase() === 'FROM:' || t.text.toUpperCase().includes('SUPPLIER')) &&
@@ -278,9 +275,9 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   if (billFromToken) {
     const vendorTokens = tokens.filter(t => 
       t.top >= billFromToken.top - 1 &&
-      t.bottom <= tableHeaderTop - 1 &&
+      t.bottom <= tableHeaderTop - 1.5 &&
       t.left >= billFromToken.left - 4 &&
-      t.right <= billFromToken.left + 35 &&
+      t.right <= billFromToken.left + 28 &&
       !t.text.toUpperCase().includes('BILL TO') &&
       !t.text.toUpperCase().includes('ISSUE DATE')
     );
@@ -294,15 +291,15 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
       boundingBoxes.push(computeUnionBox(vendorTokens, 'VENDOR / SUPPLIER', vendorName, '#00A9C5', 99));
     }
   } else {
-    const topCompanyTokens = tokens.filter(t => t.top < tableHeaderTop && t.left < 45 && !t.text.toUpperCase().includes('INVOICE'));
+    const topCompanyTokens = tokens.filter(t => t.top < tableHeaderTop && t.left < 36 && !t.text.toUpperCase().includes('INVOICE') && t.top > 20);
     if (topCompanyTokens.length > 0) {
       vendorName = topCompanyTokens[0].text;
-      boundingBoxes.push(computeUnionBox(topCompanyTokens.slice(0, 4), 'VENDOR / SUPPLIER', vendorName, '#00A9C5', 99));
+      boundingBoxes.push(computeUnionBox(topCompanyTokens, 'VENDOR / SUPPLIER', vendorName, '#00A9C5', 99));
     }
   }
 
   // ========================================================
-  // 5. BILL TO / CUSTOMER BLOCK (Column 2, strictly above tableHeaderTop!)
+  // 5. BILL TO / CUSTOMER BLOCK (Column 2: 36% <= left <= 62%, strictly above tableHeaderTop)
   // ========================================================
   const billToToken = tokens.find(t => 
     (t.text.toUpperCase().includes('BILL TO') || t.text.toUpperCase() === 'TO:' || t.text.toUpperCase().includes('CUSTOMER')) &&
@@ -314,9 +311,9 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   if (billToToken) {
     const customerTokens = tokens.filter(t => 
       t.top >= billToToken.top - 1 &&
-      t.bottom <= tableHeaderTop - 1 &&
+      t.bottom <= tableHeaderTop - 1.5 &&
       t.left >= billToToken.left - 4 &&
-      t.right <= billToToken.left + 32 &&
+      t.right <= billToToken.left + 28 &&
       !t.text.toUpperCase().includes('ISSUE DATE') &&
       !t.text.toUpperCase().includes('DUE DATE')
     );
@@ -332,10 +329,10 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   }
 
   // ========================================================
-  // 6. ISSUE DATE / DUE DATE BLOCK (Column 3, strictly above tableHeaderTop!)
+  // 6. ISSUE DATE / DUE DATE BLOCK (Column 3: left > 60%, strictly above tableHeaderTop)
   // ========================================================
   const issueDateToken = tokens.find(t => 
-    (t.text.toUpperCase().includes('ISSUE DATE') || t.text.toUpperCase().includes('INVOICE DATE') || (t.text.toUpperCase().includes('DATE') && t.left > 55 && t.top < tableHeaderTop))
+    (t.text.toUpperCase().includes('ISSUE DATE') || t.text.toUpperCase().includes('INVOICE DATE') || (t.text.toUpperCase().includes('DATE') && t.left > 58 && t.top < tableHeaderTop))
   );
   
   let dateValue = 'Date Field';
@@ -343,9 +340,9 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   if (issueDateToken) {
     const dateBlockTokens = tokens.filter(t => 
       t.top >= issueDateToken.top - 1 &&
-      t.bottom <= tableHeaderTop - 1 &&
+      t.bottom <= tableHeaderTop - 1.5 &&
       t.left >= issueDateToken.left - 4 &&
-      t.left > 50 &&
+      t.left > 56 &&
       !t.text.toUpperCase().includes('PRICE') &&
       !t.text.toUpperCase().includes('QTY')
     );
@@ -361,11 +358,11 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   }
 
   // ========================================================
-  // 7. LINE ITEMS TABLE (STRICTLY BETWEEN tableHeaderTop AND totalsSectionTop!)
+  // 7. LINE ITEMS TABLE (STRICTLY BETWEEN tableHeaderTop AND totalsSectionTop)
   // ========================================================
   const tableTokens = tokens.filter(t => 
-    t.top >= tableHeaderTop - 1.5 &&
-    t.bottom <= (totalsSectionTop < 100 ? totalsSectionTop - 1.5 : 82) &&
+    t.top >= tableHeaderTop - 1.0 &&
+    t.bottom <= (totalsSectionTop < 100 ? totalsSectionTop - 1.0 : 68.0) &&
     !t.text.toUpperCase().includes('PAYMENT') &&
     !t.text.toUpperCase().includes('THANK YOU')
   );
@@ -492,8 +489,8 @@ function computeUnionBox(tokens, label, value, color, confidence) {
   const maxRight = Math.max(...tokens.map(t => t.right));
   const maxBottom = Math.max(...tokens.map(t => t.bottom));
   
-  // Padding in percentage
-  const padX = 0.6;
+  // Clean padding in percentage
+  const padX = 0.5;
   const padY = 0.4;
   
   const left = Math.max(0, minLeft - padX);
@@ -514,7 +511,7 @@ function computeUnionBox(tokens, label, value, color, confidence) {
 }
 
 /**
- * Default fallback payload
+ * Default calibrated fallback payload
  */
 function createDefaultPayload(fileName, fileType, pageImageUrl) {
   return {
@@ -546,12 +543,12 @@ function createDefaultPayload(fileName, fileType, pageImageUrl) {
       { id: 6, desc: 'Line Item & Description', unit: 'ea', qty: 1, rate: 0.00, amount: 0.00, poQty: 1, grnQty: 1, status: 'Matched' }
     ],
     boundingBoxes: [
-      { label: 'INVOICE NO', value: '0000001', left: 7, top: 8, width: 34, height: 11, color: '#00A86B', confidence: 99 },
-      { label: 'VENDOR / SUPPLIER', value: 'Your Company Name', left: 7, top: 26, width: 26, height: 10, color: '#00A9C5', confidence: 99 },
-      { label: 'BILL TO', value: 'Customer Name', left: 36, top: 26, width: 23, height: 10, color: '#004753', confidence: 98 },
-      { label: 'ISSUE DATE', value: 'Date Field', left: 63, top: 26, width: 22, height: 10, color: '#00A9C5', confidence: 98 },
-      { label: 'TABLE LINE ITEMS (6 LINES)', value: '6 Verified Items', left: 7, top: 44, width: 82, height: 28, color: '#00A9C5', confidence: 98 },
-      { label: 'TOTAL AMOUNT', value: '$0.00', left: 56, top: 73, width: 32, height: 13, color: '#004753', confidence: 99 }
+      { label: 'INVOICE NO', value: '0000001', left: 13.5, top: 14.5, width: 29.5, height: 9.5, color: '#00A86B', confidence: 99 },
+      { label: 'VENDOR / SUPPLIER', value: 'Your Company Name', left: 14.5, top: 26.5, width: 22.5, height: 12.0, color: '#00A9C5', confidence: 99 },
+      { label: 'BILL TO', value: 'Customer Name', left: 39.5, top: 26.5, width: 22.5, height: 12.0, color: '#004753', confidence: 98 },
+      { label: 'ISSUE DATE', value: 'Date Field', left: 63.5, top: 26.5, width: 22.5, height: 12.0, color: '#00A9C5', confidence: 98 },
+      { label: 'TABLE LINE ITEMS (6 LINES)', value: '6 Verified Items', left: 13.5, top: 41.5, width: 73.0, height: 26.5, color: '#00A9C5', confidence: 98 },
+      { label: 'TOTAL AMOUNT', value: '$0.00', left: 61.5, top: 68.5, width: 25.0, height: 11.5, color: '#004753', confidence: 99 }
     ],
     fileName,
     fileType
