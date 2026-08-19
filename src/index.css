@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
 
 :root {
   /* AAAH Brand Theme Colors */
@@ -85,33 +85,36 @@
   --space-20: 80px;
 }
 
-/* Reset & Base Styles */
+/* Reset & Universal Instrument Sans Typography */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
 }
 
-body {
-  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+html, body {
+  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 400;
   background-color: var(--color-base);
   color: var(--color-gray-900);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   position: relative;
   min-height: 100vh;
   overflow-x: hidden;
 }
 
 button, input, select, textarea, optgroup {
-  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-weight: 400;
 }
 
 /* Tabular figures for tables */
 table, .tabular-nums {
-  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-variant-numeric: tabular-nums;
 }
 
@@ -149,87 +152,105 @@ table, .tabular-nums {
   left: 40%;
 }
 
-/* Global Headings & Typography Classes matching refined AAAH corporate style */
+/* Global Headings & Refined Thin-to-Medium Typography */
 h1, .text-h1 { 
-  font-family: 'Instrument Sans', sans-serif; 
+  font-family: 'Instrument Sans', sans-serif !important; 
   font-size: 24px; 
   line-height: 32px; 
-  font-weight: 700; 
-  color: #081E3C;
-  letter-spacing: -0.02em; 
-}
-
-h2, .text-h2 { 
-  font-family: 'Instrument Sans', sans-serif; 
-  font-size: 19px; 
-  line-height: 26px; 
-  font-weight: 650; 
+  font-weight: 600 !important; 
   color: #081E3C;
   letter-spacing: -0.015em; 
 }
 
-h3, .text-h3 { 
-  font-family: 'Instrument Sans', sans-serif; 
-  font-size: 15.5px; 
-  line-height: 22px; 
-  font-weight: 650; 
+h2, .text-h2 { 
+  font-family: 'Instrument Sans', sans-serif !important; 
+  font-size: 19px; 
+  line-height: 26px; 
+  font-weight: 550 !important; 
   color: #081E3C;
   letter-spacing: -0.01em; 
 }
 
+h3, .text-h3 { 
+  font-family: 'Instrument Sans', sans-serif !important; 
+  font-size: 15.5px; 
+  line-height: 22px; 
+  font-weight: 500 !important; 
+  color: #081E3C;
+  letter-spacing: -0.005em; 
+}
+
 .text-display { 
-  font-family: 'Instrument Sans', sans-serif; 
+  font-family: 'Instrument Sans', sans-serif !important; 
   font-size: 32px; 
   line-height: 40px; 
-  font-weight: 700; 
+  font-weight: 600 !important; 
   color: #081E3C;
-  letter-spacing: -0.025em; 
+  letter-spacing: -0.02em; 
 }
 
 .text-body-l { 
-  font-family: 'Instrument Sans', sans-serif; 
+  font-family: 'Instrument Sans', sans-serif !important; 
   font-size: 15px; 
   line-height: 22px; 
-  font-weight: 500; 
+  font-weight: 400; 
   color: #334155; 
 }
 
 .text-body-m { 
-  font-family: 'Instrument Sans', sans-serif; 
+  font-family: 'Instrument Sans', sans-serif !important; 
   font-size: 13.5px; 
   line-height: 20px; 
-  font-weight: 500; 
+  font-weight: 400; 
   color: #475569; 
 }
 
 .text-body-s, .page-subtitle { 
-  font-family: 'Instrument Sans', sans-serif; 
+  font-family: 'Instrument Sans', sans-serif !important; 
   font-size: 13px; 
   line-height: 18px; 
-  font-weight: 400; 
+  font-weight: 350; 
   color: #64748B; 
 }
 
 .text-caption { 
-  font-family: 'Instrument Sans', sans-serif; 
+  font-family: 'Instrument Sans', sans-serif !important; 
   font-size: 11.5px; 
   line-height: 16px; 
-  font-weight: 600; 
+  font-weight: 500; 
   color: #64748B; 
 }
 
 .text-overline { 
-  font-family: 'Montserrat', sans-serif; 
+  font-family: 'Instrument Sans', sans-serif !important; 
   font-size: 11px; 
   line-height: 14px; 
-  font-weight: 800; 
+  font-weight: 600; 
   text-transform: uppercase; 
   letter-spacing: 0.05em; 
   color: #004753; 
 }
 
 /* Arabic typography class */
-.text-arabic { font-family: var(--font-arabic); }
+.text-arabic { font-family: var(--font-arabic) !important; }
+
+/* Soften heavy inline bold weights across the application */
+strong, b {
+  font-weight: 600;
+}
+
+[style*="font-weight: 900"], [style*="font-weight:900"],
+[style*="font-weight: 800"], [style*="font-weight:800"],
+[style*="fontWeight: 900"], [style*="fontWeight: 800"],
+[style*="font-weight:900 !important"], [style*="font-weight: 800 !important"] {
+  font-weight: 600 !important;
+}
+
+[style*="font-weight: 700"], [style*="font-weight:700"],
+[style*="fontWeight: 700"],
+[style*="font-weight:700 !important"], [style*="font-weight: 700 !important"] {
+  font-weight: 500 !important;
+}
 
 /* Common Surface Class */
 .surface-glass {
@@ -252,7 +273,7 @@ h3, .text-h3 {
   justify-content: center;
   border-radius: var(--radius-pill);
   font-family: var(--font-body);
-  font-weight: 600;
+  font-weight: 500;
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   border: none;
@@ -350,7 +371,7 @@ a[style*="#007A8A"]:hover {
 .table-base th {
   padding: 12px 16px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-gray-500);
   border-bottom: 1px solid var(--color-gray-200);
 }
