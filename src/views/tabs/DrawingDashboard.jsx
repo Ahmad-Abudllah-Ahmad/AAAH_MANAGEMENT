@@ -87,92 +87,6 @@ export const DrawingDashboard = () => {
   const [hoveredTreemap, setHoveredTreemap] = useState(null);
   const [hoverCardPos, setHoverCardPos] = useState({ x: 0, y: 0 });
 
-  // Custom Treemap Content with real-time hover tracking and responsive text
-  const CustomizedTreemapContent = (props) => {
-    const { x, y, width, height, name, size, color, pct, items } = props;
-    if (!width || !height || width < 10 || height < 10) return null;
-
-    const isWide = width >= 80 && height >= 35;
-    const isNarrow = width < 80 && width >= 28 && height >= 35;
-
-    const handleHover = (e) => {
-      setHoveredTreemap({ name, size, color, pct, items });
-      setHoverCardPos({ x: e.clientX, y: e.clientY });
-    };
-
-    return (
-      <g
-        onMouseEnter={handleHover}
-        onMouseMove={handleHover}
-        onMouseLeave={() => setHoveredTreemap(null)}
-        style={{ cursor: 'pointer' }}
-      >
-        <rect
-          x={x + 1.5}
-          y={y + 1.5}
-          width={width - 3}
-          height={height - 3}
-          style={{
-            fill: color || '#004753',
-            stroke: 'none',
-            strokeWidth: 0,
-            rx: 6,
-            ry: 6,
-            pointerEvents: 'all'
-          }}
-        />
-        {isWide && (
-          <>
-            <text
-              x={x + 10}
-              y={y + 20}
-              fill="#fff"
-              fontSize={11.5}
-              fontWeight={600}
-              style={{ pointerEvents: 'none' }}
-            >
-              {name.length > 20 ? `${name.substring(0, 18)}...` : name}
-            </text>
-            <text
-              x={x + 10}
-              y={y + 36}
-              fill="rgba(255,255,255,0.85)"
-              fontSize={10.5}
-              fontWeight={500}
-              style={{ pointerEvents: 'none' }}
-            >
-              {size} Items ({pct})
-            </text>
-          </>
-        )}
-        {isNarrow && (
-          <>
-            <text
-              x={x + 6}
-              y={y + 20}
-              fill="#fff"
-              fontSize={10.5}
-              fontWeight={600}
-              style={{ pointerEvents: 'none' }}
-            >
-              {name.split(':')[0]}...
-            </text>
-            <text
-              x={x + 6}
-              y={y + 35}
-              fill="rgba(255,255,255,0.85)"
-              fontSize={9.5}
-              fontWeight={500}
-              style={{ pointerEvents: 'none' }}
-            >
-              {size} ({pct})
-            </text>
-          </>
-        )}
-      </g>
-    );
-  };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       
@@ -313,25 +227,180 @@ export const DrawingDashboard = () => {
             </div>
           </div>
 
-          <div onMouseLeave={() => setHoveredTreemap(null)} style={{ flex: 1, position: 'relative' }}>
+          <div onMouseLeave={() => setHoveredTreemap(null)} style={{ flex: 1, position: 'relative', minHeight: 220 }}>
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              onMouseLeave={() => setHoveredTreemap(null)} 
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', gap: 6 }}
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <Treemap
-                  data={csiTreemapData}
-                  dataKey="size"
-                  aspectRatio={4 / 3}
-                  stroke="none"
-                  isAnimationActive={false}
-                  content={<CustomizedTreemapContent />}
+              {/* Col 1: Div 03: Concrete & Cast-in-Place (40%) */}
+              <div 
+                onMouseEnter={(e) => {
+                  setHoveredTreemap(csiTreemapData[0]);
+                  setHoverCardPos({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseMove={(e) => {
+                  setHoveredTreemap(csiTreemapData[0]);
+                  setHoverCardPos({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseLeave={() => setHoveredTreemap(null)}
+                style={{ 
+                  flex: '38', 
+                  background: csiTreemapData[0].color, 
+                  borderRadius: 8, 
+                  padding: '12px 14px', 
+                  color: 'white', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  transition: 'filter 0.15s ease',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Div 03: Concrete &...
+                </div>
+                <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500, marginTop: 2 }}>
+                  890 Items (40%)
+                </div>
+              </div>
+
+              {/* Col 2: Div 05: Structural Steel & Framing (20%) */}
+              <div 
+                onMouseEnter={(e) => {
+                  setHoveredTreemap(csiTreemapData[1]);
+                  setHoverCardPos({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseMove={(e) => {
+                  setHoveredTreemap(csiTreemapData[1]);
+                  setHoverCardPos({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseLeave={() => setHoveredTreemap(null)}
+                style={{ 
+                  flex: '19', 
+                  background: csiTreemapData[1].color, 
+                  borderRadius: 8, 
+                  padding: '12px 14px', 
+                  color: 'white', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  transition: 'filter 0.15s ease',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Div 05: Structural...
+                </div>
+                <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500, marginTop: 2 }}>
+                  450 Items (20%)
+                </div>
+              </div>
+
+              {/* Col 3: Div 08: Openings & Doors (17%) */}
+              <div 
+                onMouseEnter={(e) => {
+                  setHoveredTreemap(csiTreemapData[2]);
+                  setHoverCardPos({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseMove={(e) => {
+                  setHoveredTreemap(csiTreemapData[2]);
+                  setHoverCardPos({ x: e.clientX, y: e.clientY });
+                }}
+                onMouseLeave={() => setHoveredTreemap(null)}
+                style={{ 
+                  flex: '16', 
+                  background: csiTreemapData[2].color, 
+                  borderRadius: 8, 
+                  padding: '12px 14px', 
+                  color: 'white', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  transition: 'filter 0.15s ease',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Div 08: Openings &...
+                </div>
+                <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500, marginTop: 2 }}>
+                  380 Items (17%)
+                </div>
+              </div>
+
+              {/* Col 4: Stacked Div 09 (Top, 14%) and Div 22 (Bottom, 9%) */}
+              <div style={{ flex: '27', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {/* Top: Div 09: Finishes & Partitions */}
+                <div 
+                  onMouseEnter={(e) => {
+                    setHoveredTreemap(csiTreemapData[3]);
+                    setHoverCardPos({ x: e.clientX, y: e.clientY });
+                  }}
+                  onMouseMove={(e) => {
+                    setHoveredTreemap(csiTreemapData[3]);
+                    setHoverCardPos({ x: e.clientX, y: e.clientY });
+                  }}
                   onMouseLeave={() => setHoveredTreemap(null)}
-                />
-              </ResponsiveContainer>
+                  style={{ 
+                    flex: '60', 
+                    background: csiTreemapData[3].color, 
+                    borderRadius: 8, 
+                    padding: '12px 14px', 
+                    color: 'white', 
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-start',
+                    transition: 'filter 0.15s ease',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Div 09: Finishes &...
+                  </div>
+                  <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500, marginTop: 2 }}>
+                    320 Items (14%)
+                  </div>
+                </div>
+
+                {/* Bottom: Div 22: MEP Plumbing & Risers */}
+                <div 
+                  onMouseEnter={(e) => {
+                    setHoveredTreemap(csiTreemapData[4]);
+                    setHoverCardPos({ x: e.clientX, y: e.clientY });
+                  }}
+                  onMouseMove={(e) => {
+                    setHoveredTreemap(csiTreemapData[4]);
+                    setHoverCardPos({ x: e.clientX, y: e.clientY });
+                  }}
+                  onMouseLeave={() => setHoveredTreemap(null)}
+                  style={{ 
+                    flex: '40', 
+                    background: csiTreemapData[4].color, 
+                    borderRadius: 8, 
+                    padding: '10px 14px', 
+                    color: 'white', 
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-start',
+                    transition: 'filter 0.15s ease',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    Div 22: MEP Plumbi...
+                  </div>
+                  <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.85)', fontWeight: 500, marginTop: 2 }}>
+                    190 Items (9%)
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
