@@ -324,10 +324,10 @@ export const OcrInvoices = () => {
                 ) : (
                   <div style={{ background: 'white', padding: 16, borderRadius: 6, border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                    <div style={{ border: '1.5px solid #00A9C5', background: '#F0F8FA', padding: '8px 12px', borderRadius: 4, maxWidth: 320 }}>
+                    <div style={{ maxWidth: 320 }}>
                       <div style={{ fontSize: 10, color: '#00556A', fontWeight: 800 }}>SUPPLIER / المورد</div>
                       <div style={{ fontSize: 13, fontWeight: 900, color: '#081E3C' }}>{selectedInvoice.vendor}</div>
-                      <div style={{ fontSize: 11, color: '#64748B' }}>{selectedInvoice.supplierAddress || 'UAE Licensed Contractor'}</div>
+                      <div style={{ fontSize: 11, color: '#64748B' }}>{selectedInvoice.supplierAddress || 'Dubai, United Arab Emirates'}</div>
                     </div>
 
                     <div style={{ textAlign: 'right' }}>

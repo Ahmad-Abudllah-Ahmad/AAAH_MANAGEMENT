@@ -98,20 +98,26 @@ export const InvoiceMatching = () => {
   const [editableItems, setEditableItems] = useState([]);
   const [editableMeta, setEditableMeta] = useState({
     supplier: '',
+    supplierAddress: '',
     id: '',
     date: '',
     billTo: '',
-    poNumber: ''
+    billToAddress: '',
+    poNumber: '',
+    vatRate: 5
   });
 
   useEffect(() => {
     if (currentInvoice) {
       setEditableMeta({
-        supplier: currentInvoice.supplier,
-        id: currentInvoice.id,
-        date: currentInvoice.date,
-        billTo: currentInvoice.billTo,
-        poNumber: currentInvoice.poNumber
+        supplier: currentInvoice.supplier || currentInvoice.vendor || 'Your Company Name',
+        supplierAddress: currentInvoice.supplierAddress || 'Dubai, United Arab Emirates',
+        id: currentInvoice.id || 'INV-0000001',
+        date: currentInvoice.date || 'Date Field',
+        billTo: currentInvoice.billTo || currentInvoice.customer || 'ABC Construction LLC',
+        billToAddress: currentInvoice.billToAddress || 'Dubai, United Arab Emirates',
+        poNumber: currentInvoice.poNumber || currentInvoice.poMatch || 'PO-99134',
+        vatRate: 5
       });
 
       if (currentInvoice.items) {
@@ -188,7 +194,8 @@ export const InvoiceMatching = () => {
 
   // Real-time calculated sums
   const calculatedSubtotal = editableItems.reduce((acc, it) => acc + (parseFloat(it.amount) || 0), 0);
-  const calculatedVat = parseFloat((calculatedSubtotal * 0.05).toFixed(2));
+  const vatPercentage = parseFloat(editableMeta.vatRate) !== undefined && !isNaN(parseFloat(editableMeta.vatRate)) ? parseFloat(editableMeta.vatRate) : 5;
+  const calculatedVat = parseFloat((calculatedSubtotal * (vatPercentage / 100)).toFixed(2));
   const calculatedTotal = parseFloat((calculatedSubtotal + calculatedVat).toFixed(2));
   const hasRemainingExceptions = editableItems.some(it => it.hasDiscrepancy && !varianceResolved);
 
@@ -431,15 +438,26 @@ export const InvoiceMatching = () => {
                   }}
                 >
                 {/* Invoice Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 36, alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28, alignItems: 'flex-start' }}>
                   {/* Supplier Box */}
-                  <div style={{ border: '2px solid #00A9C5', padding: '14px 18px', borderRadius: 6, background: '#F0F8FA', position: 'relative', maxWidth: 360 }}>
-                    <div style={{ fontSize: 11, color: '#00556A', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Supplier / المورد</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: '#081E3C' }}>{currentInvoice.supplier}</div>
-                    <div style={{ fontSize: 11.5, color: '#475569', marginTop: 4, lineHeight: 1.4 }}>{currentInvoice.supplierAddress}</div>
-                    <div style={{ position: 'absolute', right: -12, top: -10 }}>
-                      <ConfidenceBadge value={currentInvoice.supplierConfidence} />
-                    </div>
+                  <div style={{ maxWidth: 360, width: '100%' }}>
+                    <div style={{ fontSize: 11, color: '#00556A', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Supplier / المورد</div>
+                    <input 
+                      type="text" 
+                      value={editableMeta.supplier} 
+                      onChange={(e) => setEditableMeta(prev => ({ ...prev, supplier: e.target.value }))}
+                      placeholder="Supplier Name"
+                      style={{ fontSize: 15, fontWeight: 800, color: '#081E3C', border: '1px solid #CBD5E1', borderRadius: 4, padding: '4px 8px', width: '100%', outline: 'none', background: 'white' }}
+                      title="Click to edit supplier name"
+                    />
+                    <input 
+                      type="text" 
+                      value={editableMeta.supplierAddress} 
+                      onChange={(e) => setEditableMeta(prev => ({ ...prev, supplierAddress: e.target.value }))}
+                      placeholder="Supplier Address"
+                      style={{ fontSize: 11.5, color: '#475569', marginTop: 4, border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 8px', width: '100%', outline: 'none', background: 'white' }}
+                      title="Click to edit supplier address"
+                    />
                   </div>
 
                   {/* Invoice Meta */}
@@ -447,26 +465,69 @@ export const InvoiceMatching = () => {
                     <h1 style={{ margin: '0 0 10px 0', fontSize: 22, fontWeight: 900, color: '#081E3C' }}>
                       TAX INVOICE <span style={{ fontFamily: 'IBM Plex Sans Arabic, sans-serif', fontSize: 18, color: '#004753' }}>فاتورة ضريبية</span>
                     </h1>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 6 }}>
-                      <div style={{ border: '1.5px solid #00A86B', background: '#F0FDF4', padding: '4px 10px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#081E3C' }}>Invoice No: {currentInvoice.id}</span>
-                        <ConfidenceBadge value={99} />
-                      </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 6, alignItems: 'center' }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#081E3C' }}>Invoice No:</span>
+                      <input 
+                        type="text" 
+                        value={editableMeta.id} 
+                        onChange={(e) => setEditableMeta(prev => ({ ...prev, id: e.target.value }))}
+                        placeholder="Invoice No"
+                        style={{ fontSize: 12.5, fontWeight: 700, color: '#081E3C', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 8px', width: 140, outline: 'none', background: 'white', textAlign: 'right' }}
+                        title="Click to edit invoice number"
+                      />
                     </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                      <div style={{ border: '1.5px solid #00A86B', background: '#F0FDF4', padding: '4px 10px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#081E3C' }}>Date: {currentInvoice.date}</span>
-                        <ConfidenceBadge value={currentInvoice.dateConfidence} />
-                      </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#081E3C' }}>Date:</span>
+                      <input 
+                        type="text" 
+                        value={editableMeta.date} 
+                        onChange={(e) => setEditableMeta(prev => ({ ...prev, date: e.target.value }))}
+                        placeholder="Invoice Date"
+                        style={{ fontSize: 12.5, fontWeight: 700, color: '#081E3C', border: '1px solid #CBD5E1', borderRadius: 4, padding: '3px 8px', width: 140, outline: 'none', background: 'white', textAlign: 'right' }}
+                        title="Click to edit date"
+                      />
                     </div>
                   </div>
                 </div>
 
                 {/* Bill To */}
                 <div style={{ marginBottom: 28, background: '#F8FAFC', padding: '12px 16px', borderRadius: 6, border: '1px solid #E2E8F0' }}>
-                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Bill To / فاتورة إلى</div>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#081E3C' }}>{currentInvoice.billTo}</div>
-                  <div style={{ fontSize: 12, color: '#475569' }}>{currentInvoice.billToAddress} • Ref PO: <strong>{currentInvoice.poNumber}</strong></div>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 800, textTransform: 'uppercase', marginBottom: 6 }}>Bill To / فاتورة إلى</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.2fr 0.9fr', gap: 10 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Customer Name</div>
+                      <input 
+                        type="text" 
+                        value={editableMeta.billTo} 
+                        onChange={(e) => setEditableMeta(prev => ({ ...prev, billTo: e.target.value }))}
+                        placeholder="Customer Name"
+                        style={{ fontSize: 13.5, fontWeight: 800, color: '#081E3C', border: '1px solid #CBD5E1', borderRadius: 4, padding: '4px 8px', width: '100%', outline: 'none', background: 'white' }}
+                        title="Click to edit customer name"
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Address / Location</div>
+                      <input 
+                        type="text" 
+                        value={editableMeta.billToAddress} 
+                        onChange={(e) => setEditableMeta(prev => ({ ...prev, billToAddress: e.target.value }))}
+                        placeholder="Customer Address"
+                        style={{ fontSize: 12, color: '#475569', border: '1px solid #CBD5E1', borderRadius: 4, padding: '4px 8px', width: '100%', outline: 'none', background: 'white' }}
+                        title="Click to edit customer address"
+                      />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Ref PO Number</div>
+                      <input 
+                        type="text" 
+                        value={editableMeta.poNumber} 
+                        onChange={(e) => setEditableMeta(prev => ({ ...prev, poNumber: e.target.value }))}
+                        placeholder="PO Number"
+                        style={{ fontSize: 12, fontWeight: 700, color: '#081E3C', border: '1px solid #CBD5E1', borderRadius: 4, padding: '4px 8px', width: '100%', outline: 'none', background: 'white' }}
+                        title="Click to edit Ref PO"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Line Items Table */}
@@ -614,7 +675,22 @@ export const InvoiceMatching = () => {
                       </td>
                     </tr>
                     <tr style={{ background: '#F8FAFC', fontWeight: 700 }}>
-                      <td colSpan={5} style={{ padding: '8px 10px', textAlign: 'right', color: '#475569' }}>VAT 5%</td>
+                      <td colSpan={5} style={{ padding: '8px 10px', textAlign: 'right', color: '#475569' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <span>VAT</span>
+                          <input 
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            value={editableMeta.vatRate}
+                            onChange={(e) => setEditableMeta(prev => ({ ...prev, vatRate: e.target.value }))}
+                            style={{ width: 42, textAlign: 'center', fontWeight: 800, border: '1px solid #CBD5E1', borderRadius: 4, padding: '2px 3px', fontSize: 11.5, background: 'white', outline: 'none' }}
+                            title="Click to edit VAT rate percentage"
+                          />
+                          <span>%</span>
+                        </div>
+                      </td>
                       <td style={{ padding: '8px 10px', textAlign: 'right', color: '#081E3C', fontWeight: 800 }}>
                         {calculatedVat.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </td>
