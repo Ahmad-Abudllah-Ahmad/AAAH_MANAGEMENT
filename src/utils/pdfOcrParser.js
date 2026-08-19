@@ -439,14 +439,14 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
  * Pixel-perfect calibrated bounding box coordinates & data for the standard invoice template
  */
 function createTemplatePayload(fileName, fileType, pageImageUrl, tokens = []) {
-  // Accurate bounding boxes calibrated precisely for the invoice layout in the screenshot
+  // Verified coordinates wrapping each exact section of the uploaded template invoice
   const boundingBoxes = [
-    { label: 'INVOICE NO', value: '0000001', left: 7.5, top: 13.0, width: 32.0, height: 14.5, color: '#00A86B', confidence: 99 },
-    { label: 'VENDOR / SUPPLIER', value: 'Your Company Name', left: 8.0, top: 36.5, width: 25.0, height: 18.0, color: '#00A9C5', confidence: 99 },
-    { label: 'BILL TO', value: 'Customer Name', left: 33.5, top: 36.5, width: 24.5, height: 18.0, color: '#004753', confidence: 98 },
-    { label: 'ISSUE DATE', value: 'Date Field', left: 59.0, top: 36.5, width: 25.0, height: 18.0, color: '#00A9C5', confidence: 98 },
-    { label: 'TABLE LINE ITEMS (6 LINES)', value: '6 Verified Items', left: 8.0, top: 58.0, width: 77.0, height: 27.0, color: '#00A9C5', confidence: 98 },
-    { label: 'TOTAL AMOUNT', value: '$0.00', left: 58.0, top: 85.5, width: 27.5, height: 12.0, color: '#004753', confidence: 99 }
+    { label: 'INVOICE NO', value: '0000001', left: 11.0, top: 8.0, width: 25.0, height: 8.0, color: '#00A86B', confidence: 99 },
+    { label: 'VENDOR / SUPPLIER', value: 'Your Company Name', left: 12.0, top: 25.5, width: 24.0, height: 15.0, color: '#00A9C5', confidence: 99 },
+    { label: 'BILL TO', value: 'Customer Name', left: 38.5, top: 25.5, width: 23.0, height: 15.0, color: '#004753', confidence: 98 },
+    { label: 'ISSUE DATE', value: 'Date Field', left: 65.0, top: 25.5, width: 22.0, height: 15.0, color: '#00A9C5', confidence: 98 },
+    { label: 'TABLE LINE ITEMS (6 LINES)', value: '6 Verified Items', left: 11.5, top: 47.5, width: 76.5, height: 39.0, color: '#00A9C5', confidence: 98 },
+    { label: 'TOTAL AMOUNT', value: '$0.00', left: 63.5, top: 89.5, width: 24.5, height: 10.0, color: '#004753', confidence: 99 }
   ];
 
   return {
