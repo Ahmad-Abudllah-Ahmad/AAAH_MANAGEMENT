@@ -121,10 +121,10 @@ export const DrawingDashboard = () => {
           onMouseLeave={() => setHoveredTreemap(null)}
           style={{
             fill: color || '#004753',
-            stroke: '#fff',
-            strokeWidth: 2,
-            rx: 8,
-            ry: 8,
+            stroke: 'none',
+            strokeWidth: 0,
+            rx: 6,
+            ry: 6,
           }}
         />
         {showText && (
@@ -308,7 +308,7 @@ export const DrawingDashboard = () => {
                   data={csiTreemapData}
                   dataKey="size"
                   aspectRatio={4 / 3}
-                  stroke="#fff"
+                  stroke="none"
                   isAnimationActive={false}
                   content={<CustomizedTreemapContent />}
                   onMouseLeave={() => setHoveredTreemap(null)}
