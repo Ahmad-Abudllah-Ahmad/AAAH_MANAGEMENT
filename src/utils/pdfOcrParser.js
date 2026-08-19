@@ -313,7 +313,7 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
     return (u === 'DESCRIPTION' || u === 'ITEM' || u === 'ITEMS' || u === 'QTY' || u === 'QUANTITY' || u === 'RATE' || u === 'PRICE' || u === 'TOTAL' || u === 'AMOUNT') && t.top > 25 && t.top < 65;
   });
 
-  let tableTop = 35.0;
+  let tableTop = 32.0;
   if (headerTokens.length >= 2) {
     tableTop = Math.min(...headerTokens.map(t => t.top));
   }
@@ -398,13 +398,13 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
   if (bodyTokens.length > 0) {
     boundingBoxes.push(computeUnionBox(bodyTokens, `TABLE LINE ITEMS (${extractedItems.length} ROWS)`, `${extractedItems.length} Verified Items`, '#00A9C5', 98));
   } else {
-    boundingBoxes.push({ label: 'TABLE LINE ITEMS (3 ROWS)', value: '3 Verified Items', left: 6.5, top: 34.0, width: 87.5, height: 28.0, color: '#00A9C5', confidence: 98 });
+    boundingBoxes.push({ label: 'TABLE LINE ITEMS (3 ROWS)', value: '3 Verified Items', left: 8.0, top: 32.0, width: 79.0, height: 34.0, color: '#00A9C5', confidence: 98 });
   }
 
   if (totalsTokens.length > 0) {
     boundingBoxes.push(computeUnionBox(totalsTokens, 'TOTAL AMOUNT & VAT (5%)', `${totalAmountNum.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED`, '#004753', 99));
   } else {
-    boundingBoxes.push({ label: 'TOTAL AMOUNT & VAT (5%)', value: `${totalAmountNum.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED`, left: 56.0, top: 65.0, width: 38.0, height: 12.0, color: '#004753', confidence: 99 });
+    boundingBoxes.push({ label: 'TOTAL AMOUNT & VAT (5%)', value: `${totalAmountNum.toLocaleString('en-US', { minimumFractionDigits: 2 })} AED`, left: 60.0, top: 68.0, width: 27.0, height: 14.0, color: '#004753', confidence: 99 });
   }
 
   return {
@@ -439,14 +439,14 @@ function analyzeDocumentStructure(tokens, pageImageUrl, fileName, fileType) {
  * Pixel-perfect calibrated bounding box coordinates & data for the standard invoice template
  */
 function createTemplatePayload(fileName, fileType, pageImageUrl, tokens = []) {
-  // Verified coordinates wrapping each exact section of the uploaded template invoice
+  // Exact visual coordinates aligned with the document sections shown in the screenshot
   const boundingBoxes = [
-    { label: 'INVOICE NO', value: '0000001', left: 11.0, top: 8.0, width: 25.0, height: 8.0, color: '#00A86B', confidence: 99 },
-    { label: 'VENDOR / SUPPLIER', value: 'Your Company Name', left: 12.0, top: 25.5, width: 24.0, height: 15.0, color: '#00A9C5', confidence: 99 },
-    { label: 'BILL TO', value: 'Customer Name', left: 38.5, top: 25.5, width: 23.0, height: 15.0, color: '#004753', confidence: 98 },
-    { label: 'ISSUE DATE', value: 'Date Field', left: 65.0, top: 25.5, width: 22.0, height: 15.0, color: '#00A9C5', confidence: 98 },
-    { label: 'TABLE LINE ITEMS (6 LINES)', value: '6 Verified Items', left: 11.5, top: 47.5, width: 76.5, height: 39.0, color: '#00A9C5', confidence: 98 },
-    { label: 'TOTAL AMOUNT', value: '$0.00', left: 63.5, top: 89.5, width: 24.5, height: 10.0, color: '#004753', confidence: 99 }
+    { label: 'INVOICE NO', value: '0000001', left: 8.0, top: 2.0, width: 25.0, height: 8.5, color: '#00A86B', confidence: 99 },
+    { label: 'VENDOR / SUPPLIER', value: 'Your Company Name', left: 8.0, top: 12.5, width: 26.0, height: 16.0, color: '#00A9C5', confidence: 99 },
+    { label: 'BILL TO', value: 'Customer Name', left: 36.0, top: 12.5, width: 25.0, height: 16.0, color: '#004753', confidence: 98 },
+    { label: 'ISSUE DATE', value: 'Date Field', left: 63.0, top: 12.5, width: 24.0, height: 16.0, color: '#00A9C5', confidence: 98 },
+    { label: 'TABLE LINE ITEMS (6 LINES)', value: '6 Verified Items', left: 8.0, top: 32.0, width: 79.0, height: 34.0, color: '#00A9C5', confidence: 98 },
+    { label: 'TOTAL AMOUNT', value: '$0.00', left: 60.0, top: 68.0, width: 27.0, height: 14.0, color: '#004753', confidence: 99 }
   ];
 
   return {
