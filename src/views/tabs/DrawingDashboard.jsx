@@ -87,67 +87,85 @@ export const DrawingDashboard = () => {
   const [hoveredTreemap, setHoveredTreemap] = useState(null);
   const [hoverCardPos, setHoverCardPos] = useState({ x: 0, y: 0 });
 
-  // Custom Treemap Content with safe non-overlapping text and mouse tracking
+  // Custom Treemap Content with real-time hover tracking and responsive text
   const CustomizedTreemapContent = (props) => {
     const { x, y, width, height, name, size, color, pct, items } = props;
-    if (width < 20 || height < 20) return null;
+    if (!width || !height || width < 10 || height < 10) return null;
 
-    const showText = width > 90 && height > 45;
+    const isWide = width >= 80 && height >= 35;
+    const isNarrow = width < 80 && width >= 28 && height >= 35;
+
+    const handleHover = (e) => {
+      setHoveredTreemap({ name, size, color, pct, items });
+      setHoverCardPos({ x: e.clientX, y: e.clientY });
+    };
 
     return (
       <g
-        onMouseEnter={(e) => {
-          setHoveredTreemap({ name, size, color, pct, items });
-          setHoverCardPos({ x: e.clientX, y: e.clientY });
-        }}
-        onMouseMove={(e) => {
-          setHoverCardPos({ x: e.clientX, y: e.clientY });
-        }}
+        onMouseEnter={handleHover}
+        onMouseMove={handleHover}
         onMouseLeave={() => setHoveredTreemap(null)}
         style={{ cursor: 'pointer' }}
       >
         <rect
-          x={x + 2}
-          y={y + 2}
-          width={width - 4}
-          height={height - 4}
-          onMouseEnter={(e) => {
-            setHoveredTreemap({ name, size, color, pct, items });
-            setHoverCardPos({ x: e.clientX, y: e.clientY });
-          }}
-          onMouseMove={(e) => {
-            setHoverCardPos({ x: e.clientX, y: e.clientY });
-          }}
-          onMouseLeave={() => setHoveredTreemap(null)}
+          x={x + 1.5}
+          y={y + 1.5}
+          width={width - 3}
+          height={height - 3}
           style={{
             fill: color || '#004753',
             stroke: 'none',
             strokeWidth: 0,
             rx: 6,
             ry: 6,
+            pointerEvents: 'all'
           }}
         />
-        {showText && (
+        {isWide && (
           <>
             <text
-              x={x + 12}
-              y={y + 22}
+              x={x + 10}
+              y={y + 20}
               fill="#fff"
               fontSize={11.5}
-              fontWeight={800}
+              fontWeight={600}
               style={{ pointerEvents: 'none' }}
             >
-              {name.length > 18 ? `${name.substring(0, 16)}...` : name}
+              {name.length > 20 ? `${name.substring(0, 18)}...` : name}
             </text>
             <text
-              x={x + 12}
-              y={y + 38}
+              x={x + 10}
+              y={y + 36}
               fill="rgba(255,255,255,0.85)"
               fontSize={10.5}
-              fontWeight={700}
+              fontWeight={500}
               style={{ pointerEvents: 'none' }}
             >
               {size} Items ({pct})
+            </text>
+          </>
+        )}
+        {isNarrow && (
+          <>
+            <text
+              x={x + 6}
+              y={y + 20}
+              fill="#fff"
+              fontSize={10.5}
+              fontWeight={600}
+              style={{ pointerEvents: 'none' }}
+            >
+              {name.split(':')[0]}...
+            </text>
+            <text
+              x={x + 6}
+              y={y + 35}
+              fill="rgba(255,255,255,0.85)"
+              fontSize={9.5}
+              fontWeight={500}
+              style={{ pointerEvents: 'none' }}
+            >
+              {size} ({pct})
             </text>
           </>
         )}
@@ -162,8 +180,8 @@ export const DrawingDashboard = () => {
       {hoveredTreemap && (
         <div style={{ 
           position: 'fixed', 
-          top: Math.max(10, hoverCardPos.y - 110), 
-          left: Math.max(10, Math.min(window.innerWidth - 250, hoverCardPos.x - 110)), 
+          top: Math.max(10, Math.min(window.innerHeight - 130, hoverCardPos.y - 100)), 
+          left: Math.max(10, Math.min(window.innerWidth - 260, hoverCardPos.x + 14)), 
           zIndex: 9999, 
           pointerEvents: 'none',
           background: 'rgba(8, 30, 60, 0.96)', 
@@ -176,7 +194,7 @@ export const DrawingDashboard = () => {
           border: '1px solid rgba(255,255,255,0.15)',
           minWidth: 220
         }}>
-          <div style={{ fontWeight: 800, color: '#00A9C5', marginBottom: 2 }}>
+          <div style={{ fontWeight: 600, color: '#00A9C5', marginBottom: 2 }}>
             {hoveredTreemap.name}
           </div>
           <div style={{ fontSize: 11.5 }}>
