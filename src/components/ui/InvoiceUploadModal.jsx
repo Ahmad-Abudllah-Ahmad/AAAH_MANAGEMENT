@@ -21,7 +21,7 @@ export const InvoiceUploadModal = ({ isOpen, onClose, onUploaded }) => {
   const [parsedPreview, setParsedPreview] = useState(null);
   
   // Viewer controls
-  const [previewMode, setPreviewMode] = useState('overlay'); // 'overlay' | 'structured' | 'raw_pdf'
+  const [previewMode, setPreviewMode] = useState('structured'); // 'structured' | 'raw_pdf'
   const [showBoundingBoxes, setShowBoundingBoxes] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [hoveredBox, setHoveredBox] = useState(null);
@@ -465,29 +465,9 @@ export const InvoiceUploadModal = ({ isOpen, onClose, onUploaded }) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8FAFC', padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <button
-                    onClick={() => setPreviewMode('overlay')}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: 6,
-                      border: 'none',
-                      background: previewMode === 'overlay' ? '#004753' : 'white',
-                      color: previewMode === 'overlay' ? 'white' : '#475569',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: previewMode === 'overlay' ? '0 2px 6px rgba(0,71,83,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
-                    }}
-                  >
-                    <ShieldCheck size={14} /> Optical Bounding Box Exact Layout
-                  </button>
-
-                  <button
                     onClick={() => setPreviewMode('structured')}
                     style={{
-                      padding: '6px 12px',
+                      padding: '6px 14px',
                       borderRadius: 6,
                       border: 'none',
                       background: previewMode === 'structured' ? '#004753' : 'white',
@@ -508,7 +488,7 @@ export const InvoiceUploadModal = ({ isOpen, onClose, onUploaded }) => {
                     <button
                       onClick={() => setPreviewMode('raw_pdf')}
                       style={{
-                        padding: '6px 12px',
+                        padding: '6px 14px',
                         borderRadius: 6,
                         border: 'none',
                         background: previewMode === 'raw_pdf' ? '#004753' : 'white',
@@ -531,243 +511,8 @@ export const InvoiceUploadModal = ({ isOpen, onClose, onUploaded }) => {
                   <span style={{ fontSize: 11.5, color: '#64748B' }}>
                     File: <strong>{parsedPreview.fileName}</strong>
                   </span>
-                  
-                  {previewMode === 'overlay' && (
-                    <>
-                      <div style={{ width: 1, height: 14, background: '#CBD5E1' }} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'white', padding: '2px 4px', borderRadius: 4, border: '1px solid #CBD5E1' }}>
-                        <button onClick={() => setZoomLevel(Math.max(60, zoomLevel - 15))} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', padding: 2 }}><ZoomOut size={13} color="#64748B" /></button>
-                        <span style={{ fontSize: 10.5, fontWeight: 700, minWidth: 32, textAlign: 'center' }}>{zoomLevel}%</span>
-                        <button onClick={() => setZoomLevel(Math.min(140, zoomLevel + 15))} style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', padding: 2 }}><ZoomIn size={13} color="#64748B" /></button>
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
-
-              {/* Mode 1: Optical Bounding Box Exact Layout */}
-              {previewMode === 'overlay' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ background: '#ECEFF4', borderRadius: 10, border: '1px solid #CBD5E1', padding: 16, display: 'flex', justifyContent: 'center', overflow: 'auto', maxHeight: 420 }}>
-                    <motion.div 
-                      style={{ 
-                        width: 780, 
-                        position: 'relative', 
-                        background: 'white', 
-                        borderRadius: 6, 
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                        transform: `scale(${zoomLevel / 100})`,
-                        transformOrigin: 'top center',
-                        transition: 'transform 0.15s ease-out'
-                      }}
-                    >
-                      {/* Document Canvas Render or Authentic High-Fidelity Sheet */}
-                      {parsedPreview.pageImageUrl ? (
-                        <div style={{ position: 'relative' }}>
-                          <img 
-                            src={parsedPreview.pageImageUrl} 
-                            alt="Document Scan" 
-                            style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 6 }} 
-                          />
-                        </div>
-                      ) : (
-                        <div style={{ padding: 28, minHeight: 520, background: 'white', borderRadius: 6 }}>
-                          {/* Top Header Block */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-                            <div style={{ border: '2px solid #00556A', background: '#F0F8FA', padding: '10px 14px', borderRadius: 6, maxWidth: 360, position: 'relative' }}>
-                              <div style={{ position: 'absolute', top: -10, left: 10, background: '#00556A', color: 'white', fontSize: 9.5, fontWeight: 800, padding: '1px 6px', borderRadius: 3 }}>
-                                OCR: SUPPLIER [99%]
-                              </div>
-                              <div style={{ fontSize: 10, color: '#00556A', fontWeight: 800, textTransform: 'uppercase' }}>SUPPLIER / المورد</div>
-                              <div style={{ fontSize: 14, fontWeight: 900, color: '#081E3C' }}>{parsedPreview.vendor}</div>
-                              <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{parsedPreview.supplierAddress}</div>
-                            </div>
-
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: 16, fontWeight: 900, color: '#081E3C' }}>
-                                TAX INVOICE <span style={{ color: '#004753', fontSize: 13 }}>فاتورة ضريبية</span>
-                              </div>
-                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #00A86B', background: '#F0FDF4', padding: '3px 8px', borderRadius: 4, marginTop: 4 }}>
-                                <span style={{ fontSize: 12, fontWeight: 800, color: '#081E3C' }}>{parsedPreview.id}</span>
-                                <span style={{ fontSize: 9.5, background: '#00A86B', color: 'white', padding: '1px 4px', borderRadius: 3, fontWeight: 800 }}>99%</span>
-                              </div>
-                              <div style={{ fontSize: 11.5, color: '#64748B', marginTop: 3 }}>
-                                Date: <strong>{parsedPreview.date}</strong> • Ref: <strong>{parsedPreview.poMatch}</strong>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Bill To Box */}
-                          <div style={{ marginBottom: 16, background: '#F8FAFC', padding: '10px 14px', borderRadius: 6, border: '1px solid #E2E8F0' }}>
-                            <div style={{ fontSize: 10, color: '#64748B', fontWeight: 800, textTransform: 'uppercase' }}>Bill To / فاتورة إلى</div>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: '#081E3C' }}>{parsedPreview.billTo || parsedPreview.customer || 'ABC Construction LLC'}</div>
-                            <div style={{ fontSize: 11, color: '#475569' }}>Dubai, United Arab Emirates • Ref PO: <strong>{parsedPreview.poMatch}</strong></div>
-                          </div>
-
-                          {/* Line Items Table */}
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, border: '1px solid #CBD5E1', marginBottom: 12 }}>
-                            <thead style={{ background: '#081E3C', color: 'white' }}>
-                              <tr>
-                                <th style={{ padding: '6px 8px', textAlign: 'left', width: 35 }}>#</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'left' }}>Extracted Description</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'center', width: 55 }}>Unit</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'right', width: 65 }}>Qty</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'right', width: 95 }}>Rate (AED)</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'right', width: 100 }}>Total (AED)</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {parsedPreview.items.map((item, idx) => (
-                                <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0', background: idx % 2 === 0 ? 'white' : '#FAFAFA' }}>
-                                  <td style={{ padding: '6px 8px', color: '#64748B' }}>{idx + 1}</td>
-                                  <td style={{ padding: '6px 8px', fontWeight: 700, color: '#081E3C' }}>{item.desc}</td>
-                                  <td style={{ padding: '6px 8px', textAlign: 'center', color: '#64748B' }}>{item.unit}</td>
-                                  <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{item.qty}</td>
-                                  <td style={{ padding: '6px 8px', textAlign: 'right', color: '#334155' }}>{Number(item.rate).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                                  <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 800, color: '#081E3C' }}>{Number(item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-
-                          {/* Totals Summary */}
-                          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <div style={{ width: 250, border: '2px solid #004753', background: '#F0F8FA', padding: '10px 14px', borderRadius: 6 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: '#475569' }}>
-                                <span>Subtotal:</span>
-                                <span>{Number(parsedPreview.subtotal).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: '#475569', marginTop: 2 }}>
-                                <span>VAT (5%):</span>
-                                <span>{Number(parsedPreview.vat).toLocaleString('en-US', { minimumFractionDigits: 2 })} AED</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 900, color: '#004753', marginTop: 4, paddingTop: 4, borderTop: '1.5px solid rgba(0,71,83,0.2)' }}>
-                                <span>Total:</span>
-                                <span>{parsedPreview.amount}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Optical Bounding Box Overlays */}
-                      {showBoundingBoxes && parsedPreview.boundingBoxes?.map((box, idx) => (
-                        <div 
-                          key={idx}
-                          onMouseEnter={() => setHoveredBox(box)}
-                          onMouseLeave={() => setHoveredBox(null)}
-                          style={{
-                            position: 'absolute',
-                            left: `${box.left}%`,
-                            top: `${box.top}%`,
-                            width: `${box.width}%`,
-                            height: `${box.height}%`,
-                            border: `2px solid ${box.color || '#00A9C5'}`,
-                            background: hoveredBox === box ? 'rgba(0, 169, 197, 0.25)' : 'rgba(0, 71, 83, 0.08)',
-                            borderRadius: 4,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                            zIndex: 10
-                          }}
-                        >
-                          <div style={{
-                            position: 'absolute',
-                            top: -16,
-                            left: -2,
-                            background: box.color || '#004753',
-                            color: 'white',
-                            fontSize: 9,
-                            fontWeight: 800,
-                            padding: '1px 5px',
-                            borderRadius: 3,
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4
-                          }}>
-                            <span>{box.label}</span>
-                            <span style={{ opacity: 0.85 }}>[{box.confidence || 98}%]</span>
-                          </div>
-                        </div>
-                      ))}
-                    </motion.div>
-                  </div>
-
-                  {/* Interactive Quick Field Verification / Correction Drawer */}
-                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '10px 14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, color: '#004753', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Sliders size={13} color="#00A9C5" /> Live Verified Fields & Quick Corrections
-                      </div>
-                      <button 
-                        onClick={() => setIsEditing(!isEditing)}
-                        style={{ fontSize: 11, fontWeight: 700, color: '#004753', background: 'white', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                      >
-                        <Edit3 size={11} /> {isEditing ? 'Done Editing' : 'Edit Field Values'}
-                      </button>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                      <div>
-                        <div style={{ fontSize: 10, color: '#64748B', fontWeight: 700 }}>SUPPLIER VENDOR</div>
-                        {isEditing ? (
-                          <input 
-                            type="text" 
-                            value={parsedPreview.vendor} 
-                            onChange={(e) => handleFieldChange('vendor', e.target.value)}
-                            style={{ width: '100%', fontSize: 11.5, fontWeight: 700, padding: '3px 6px', borderRadius: 4, border: '1px solid #CBD5E1' }}
-                          />
-                        ) : (
-                          <div style={{ fontSize: 12, fontWeight: 800, color: '#081E3C' }}>{parsedPreview.vendor}</div>
-                        )}
-                      </div>
-
-                      <div>
-                        <div style={{ fontSize: 10, color: '#64748B', fontWeight: 700 }}>INVOICE NUMBER</div>
-                        {isEditing ? (
-                          <input 
-                            type="text" 
-                            value={parsedPreview.id} 
-                            onChange={(e) => handleFieldChange('id', e.target.value)}
-                            style={{ width: '100%', fontSize: 11.5, fontWeight: 700, padding: '3px 6px', borderRadius: 4, border: '1px solid #CBD5E1' }}
-                          />
-                        ) : (
-                          <div style={{ fontSize: 12, fontWeight: 800, color: '#00A86B' }}>{parsedPreview.id}</div>
-                        )}
-                      </div>
-
-                      <div>
-                        <div style={{ fontSize: 10, color: '#64748B', fontWeight: 700 }}>ISSUE DATE</div>
-                        {isEditing ? (
-                          <input 
-                            type="text" 
-                            value={parsedPreview.date} 
-                            onChange={(e) => handleFieldChange('date', e.target.value)}
-                            style={{ width: '100%', fontSize: 11.5, fontWeight: 700, padding: '3px 6px', borderRadius: 4, border: '1px solid #CBD5E1' }}
-                          />
-                        ) : (
-                          <div style={{ fontSize: 12, fontWeight: 800, color: '#00A9C5' }}>{parsedPreview.date}</div>
-                        )}
-                      </div>
-
-                      <div>
-                        <div style={{ fontSize: 10, color: '#64748B', fontWeight: 700 }}>TOTAL AMOUNT</div>
-                        {isEditing ? (
-                          <input 
-                            type="number" 
-                            value={parsedPreview.total} 
-                            onChange={(e) => handleFieldChange('total', e.target.value)}
-                            style={{ width: '100%', fontSize: 11.5, fontWeight: 800, padding: '3px 6px', borderRadius: 4, border: '1px solid #CBD5E1' }}
-                          />
-                        ) : (
-                          <div style={{ fontSize: 12.5, fontWeight: 900, color: '#004753' }}>{parsedPreview.amount}</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Mode 2: Extracted Data Breakdown */}
               {previewMode === 'structured' && (
