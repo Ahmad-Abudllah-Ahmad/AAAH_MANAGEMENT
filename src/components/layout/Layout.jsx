@@ -8,6 +8,8 @@ import { useLocation } from 'react-router-dom';
 export const Layout = ({ children, sidebarItems, sidebarTitle, topbarContent }) => {
   const location = useLocation();
 
+  const isFullBleed = location.pathname.includes('/drawing-scanner/detect') || location.pathname.includes('/drawing-scanner/ai-detect');
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <Topbar>
@@ -21,7 +23,7 @@ export const Layout = ({ children, sidebarItems, sidebarTitle, topbarContent }) 
           <Sidebar items={sidebarItems} title={sidebarTitle} />
         )}
         
-        <main style={{ flex: 1, minWidth: 0, overflowY: 'auto', padding: '0 24px 24px 24px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <main style={{ flex: 1, minWidth: 0, overflow: isFullBleed ? 'hidden' : 'auto', padding: isFullBleed ? 0 : '0 24px 24px 24px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

@@ -132,7 +132,7 @@ export const DrawingDashboard = () => {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <a 
-            href="/drawing-scanner/projects"
+            href="/drawing-scanner/detect"
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', background: 'var(--gradient-brand)', color: 'white', borderRadius: 8, textDecoration: 'none', border: 'none', fontWeight: 800, fontSize: 12, cursor: 'pointer', boxShadow: '0 4px 14px rgba(0, 71, 83, 0.25)' }}
           >
             Launch CAD Takeoff Engine <ChevronRight size={14} />

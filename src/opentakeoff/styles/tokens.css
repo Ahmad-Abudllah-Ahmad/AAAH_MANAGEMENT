@@ -1,0 +1,189 @@
+/* OpenTakeoff design tokens — single source of truth. Change the look here. */
+
+:root {
+  /* paper substrates */
+  --paper-cream: #f2f1ed;
+  --paper-bright: #fafaf8;
+  --paper-shadow: #e5e4df;
+  /* takeoff stage / toolbar band — follows data-theme, not OS color-scheme */
+  --stage: #dbe3e6;
+
+  /* ink */
+  --ink:        #1c2833;
+  --ink-soft:   #34495e;
+  --ink-muted:  #5d6d7e;
+  --ink-faint:  #aeb6bf;
+
+  /* primary accent */
+  --cobalt:     #1a5276;
+  --cobalt-deep:#154360;
+
+  /* terrazzo confetti — substrate variant only */
+  --fleck-rust:  #a0402a;
+  --fleck-ochre: #b8860b;
+  --fleck-moss:  #1e6b4a;
+  --fleck-blue:  #1a5276;
+
+  /* semantic */
+  --c-positive: #1e6b4a;
+  --c-warning:  #b8860b;
+  --c-danger:   #922b21;
+
+  /* chrome theming — novel colors pulled out of inline styles */
+  --ink-secondary: #4a5568;
+  --text-faint:    #9aa5b1;
+  --tint-select:   #e8eef5;
+  --tint-active:   #edf4ef;
+  --surface-pop:   #ffffff;
+  --well:          #ffffff;
+  --accent-contrast: #ffffff;
+  --hairline-warm: #ddd5c8;
+  --divider-soft:  #ebe8e2;
+  --scrim:         rgba(28, 40, 51, .45);
+  --shadow-pop:    0 6px 22px rgba(0, 0, 0, .14);
+  --grain-rgb:     0, 0, 0;
+  --grain-inverse-rgb: 255, 255, 255;
+
+  /* type — platform sans (matches ADICC top nav) */
+  --f-display: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-body:    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-mono:    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-mono-draft: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* hairlines */
+  --rule: 1px solid var(--ink);
+  --rule-soft: 1px solid var(--ink-faint);
+  --rule-thick: 2px solid var(--ink);
+
+  /* motion — sparing, editorial; the 1 transition already in the app uses .15s */
+  --t-fast: .12s;
+  --t:      .2s;
+  --t-slow: .35s;
+  --ease:   cubic-bezier(.4, 0, .2, 1);
+
+  /* depth — kept subtle so it reads "paper", not "SaaS card" */
+  --shadow-1: 0 1px 2px rgba(28, 40, 51, .06), 0 2px 8px rgba(28, 40, 51, .06);
+  --shadow-2: 0 12px 36px rgba(28, 40, 51, .18);
+
+  /* focus ring — translucent cobalt, sits outside the border */
+  --ring: 0 0 0 3px rgba(26, 82, 118, .18);
+
+  /* corner radius — professional rounded boxes sitewide */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+/* ── themes ──────────────────────────────────────────────────────────────────
+   Light values live in :root above; a theme is one override block keyed off
+   <html data-theme="…"> (set pre-paint by the inline script in index.html).
+   Scoped to screen so print always resolves the light palette. Roles keep
+   their meaning across themes: paper-bright = base surface, paper-cream =
+   raised card, paper-shadow = hover/pressed (goes LIGHTER in dark). */
+:root { color-scheme: light; }
+
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --paper-bright: #1a2332;
+    --paper-cream:  #222d3f;
+    --paper-shadow: #2c3a52;
+    --stage: #1a2332;
+
+    --ink:        #ecf0f1;
+    --ink-soft:   #bdc3c7;
+    --ink-muted:  #95a5a6;
+    --ink-faint:  #3d5166;
+    --text-faint: #7f8c8d;
+
+    /* Dark-mode accent only — sampled from platform navy swatch. */
+    --cobalt:      #204c68;
+    --cobalt-deep: #183a52;
+
+    --c-positive: #58d68d;
+    --c-warning:  #f4d03f;
+    --c-danger:   #ec7063;
+
+    --ink-secondary:   #aab7b8;
+    --tint-select:     #1c2a3d;
+    --tint-active:     #1e332c;
+    --surface-pop:     #2a3850;
+    --accent-contrast: #ecf0f1;
+    --hairline-warm:   #354a63;
+    --divider-soft:    #2c3a52;
+    --scrim:           rgba(0, 0, 0, .55);
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, .35), 0 2px 8px rgba(0, 0, 0, .35);
+    --shadow-2: 0 12px 36px rgba(0, 0, 0, .55);
+    --shadow-pop: 0 6px 22px rgba(0, 0, 0, .45);
+    --ring: 0 0 0 3px rgba(32, 76, 104, .65);
+
+    --grain-rgb: 255, 255, 255;
+    --grain-inverse-rgb: 0, 0, 0;
+  }
+}
+
+/* paper textures — subtle grain via layered radial gradients (no images) */
+.paper-cream {
+  background-color: var(--paper-cream);
+  background-image:
+    radial-gradient(circle at 17% 23%, rgba(var(--grain-rgb), .025) 0, transparent 1.5px),
+    radial-gradient(circle at 73% 81%, rgba(var(--grain-rgb), .022) 0, transparent 1.2px),
+    radial-gradient(circle at 41% 67%, rgba(var(--grain-rgb), .018) 0, transparent 1px),
+    radial-gradient(circle at 89% 12%, rgba(var(--grain-rgb), .022) 0, transparent 1.3px),
+    radial-gradient(circle at 8% 88%, rgba(var(--grain-rgb), .02) 0, transparent 1px);
+  background-size: 7px 7px, 11px 11px, 5px 5px, 13px 13px, 9px 9px;
+}
+
+.paper-bright {
+  background-color: var(--paper-bright);
+  background-image:
+    radial-gradient(circle at 17% 23%, rgba(var(--grain-rgb), .022) 0, transparent 1.4px),
+    radial-gradient(circle at 73% 81%, rgba(var(--grain-rgb), .018) 0, transparent 1px),
+    radial-gradient(circle at 41% 67%, rgba(var(--grain-rgb), .014) 0, transparent .8px);
+  background-size: 7px 7px, 11px 11px, 5px 5px;
+}
+
+/* terrazzo flecked paper — money-paper / mid-century look */
+.paper-terrazzo {
+  background-color: var(--paper-bright);
+  background-image:
+    radial-gradient(circle at 12% 18%, var(--fleck-rust) 0 1.2px, transparent 1.4px),
+    radial-gradient(circle at 78% 33%, var(--fleck-ochre) 0 .9px, transparent 1.1px),
+    radial-gradient(circle at 23% 71%, var(--fleck-moss) 0 1.1px, transparent 1.3px),
+    radial-gradient(circle at 67% 84%, var(--fleck-blue) 0 .8px, transparent 1px),
+    radial-gradient(circle at 51% 41%, var(--fleck-rust) 0 .7px, transparent .9px),
+    radial-gradient(circle at 88% 62%, var(--fleck-moss) 0 .8px, transparent 1px),
+    radial-gradient(circle at 6% 52%, var(--fleck-ochre) 0 1px, transparent 1.2px),
+    radial-gradient(circle at 39% 9%, var(--fleck-blue) 0 .7px, transparent .9px),
+    radial-gradient(circle at 92% 91%, var(--fleck-ochre) 0 .9px, transparent 1.1px),
+    radial-gradient(circle at 33% 52%, var(--fleck-blue) 0 .6px, transparent .8px),
+    radial-gradient(circle at 60% 14%, var(--fleck-rust) 0 .8px, transparent 1px);
+  background-size: 23px 23px, 31px 31px, 27px 27px, 19px 19px, 17px 17px, 29px 29px, 21px 21px, 25px 25px, 33px 33px, 15px 15px, 22px 22px;
+}
+
+/* ink panel */
+.ink-panel {
+  background-color: var(--ink);
+  color: var(--paper-cream);
+  background-image:
+    radial-gradient(circle at 17% 23%, rgba(var(--grain-inverse-rgb), .025) 0, transparent 1.2px),
+    radial-gradient(circle at 73% 81%, rgba(var(--grain-inverse-rgb), .02) 0, transparent 1px);
+  background-size: 9px 9px, 13px 13px;
+}
+
+/* type helpers */
+.t-display { font-family: var(--f-display); font-weight: 700; letter-spacing: -0.02em; line-height: 0.95; }
+.t-display-italic { font-family: var(--f-display); font-style: italic; font-weight: 700; letter-spacing: -0.025em; line-height: 0.9; }
+.t-body { font-family: var(--f-body); font-weight: 400; line-height: 1.45; }
+.t-mono { font-family: var(--f-mono); font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; }
+.t-mono-data { font-family: var(--f-mono); font-weight: 500; }
+.t-label { font-family: var(--f-mono); font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; font-size: 10px; color: var(--ink-muted); }
+
+/* the blue square pip — replaces crosshair */
+.pip { display: inline-block; width: 7px; height: 7px; background: var(--cobalt); vertical-align: middle; }
+.pip-sm { display: inline-block; width: 5px; height: 5px; background: var(--cobalt); vertical-align: middle; }
+
+/* dot leader (between mono labels) */
+.dot-leader { flex: 1; border-bottom: 1px dotted var(--ink-faint); margin: 0 8px; align-self: end; height: .8em; }
