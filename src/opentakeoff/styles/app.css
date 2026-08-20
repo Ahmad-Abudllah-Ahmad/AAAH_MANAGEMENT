@@ -413,7 +413,6 @@ textarea {
   justify-content: center;
   width: 100%;
   overflow: visible;
-  background: var(--surface-pop);
 }
 
 .toolbar-glass-pills-row {
@@ -5417,7 +5416,6 @@ textarea {
 }
 
 :root[data-theme="dark"] .toolbar-glass-bar {
-  background: var(--stage) !important;
 }
 
 :root[data-theme="dark"] .home-glass-btn {

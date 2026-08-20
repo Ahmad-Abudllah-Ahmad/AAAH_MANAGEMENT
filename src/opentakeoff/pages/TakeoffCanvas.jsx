@@ -9349,12 +9349,12 @@ export default function TakeoffCanvas() {
       style={{ position: "relative", display: "flex", flexDirection: "column", height: "100%", flex: 1, minHeight: 0, overflow: "hidden" }}>
       
       {/* Unified Floating Toolbar */}
-      <div className="toolbar-glass-bar" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: sheetTools ? "12px 12px 4px" : 0, width: "100%", zIndex: 10, userSelect: "none" }}>
+      <div className="toolbar-glass-bar">
         <input name="sheet-file" ref={fileInputRef} type="file" accept=".pdf,application/pdf,image/*,.zip,application/zip,application/x-zip-compressed,.dwg,application/acad,image/vnd.dwg" multiple style={{ display: "none" }} onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
         <input name="sheet-folder" ref={folderInputRef} type="file" multiple webkitdirectory="" directory="" style={{ display: "none" }} onChange={(e) => { handleFiles(e.target.files); e.target.value = ""; }} />
 
         {sheetTools && (
-        <div className="toolbar-glass-pills-row" style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "center", width: "100%" }}>
+        <div>
           {/* Tools — icon row + Auto-Takeoff / Takeoff Tool Palette */}
           <div className="toolbar-glass-pill" style={{ display: "flex", alignItems: "center", overflow: "visible", borderRadius: 14, padding: "4px 10px", gap: 8, whiteSpace: "nowrap" }}>
             
