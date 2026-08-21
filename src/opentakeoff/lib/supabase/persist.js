@@ -52,7 +52,6 @@ export function normalizeAiFloorShapeSheetIds(shapes, fileFolders = {}) {
 export function aiFloorSheetKeysMatch(shapeSheetId, viewKey) {
   if (!shapeSheetId || !viewKey) return false;
   if (shapeSheetId === viewKey) return true;
-  if (!needsAiFloorSheetFix(shapeSheetId) && !needsAiFloorSheetFix(viewKey)) return false;
   const a = parseSheetKey(shapeSheetId);
   const b = parseSheetKey(viewKey);
   return sheetBasename(shapeSheetId) === sheetBasename(viewKey) && a.page === b.page;
@@ -636,10 +635,10 @@ export async function syncProjectToSupabase(projectId, payload, pricingOpts = {}
     color: c.color,
     fill: c.fill,
     hatch: c.hatch,
-    multiplier: c.multiplier ?? 1,
-    waste_pct: c.waste_pct ?? 0,
-    height_ft: c.height_ft,
-    thickness_in: c.thickness_in,
+    multiplier: num(c.multiplier) ?? 1,
+    waste_pct: num(c.waste_pct) ?? 0,
+    height_ft: num(c.height_ft),
+    thickness_in: num(c.thickness_in),
     labor_type: c.laborType,
     subfloor_type: c.subfloorType,
     description: c.description || c.spec?.description,
@@ -653,7 +652,7 @@ export async function syncProjectToSupabase(projectId, payload, pricingOpts = {}
   await replaceChildRows("project_sheets", projectId, sheets.map((s) => ({
     project_id: projectId,
     sheet_id: s.sheet_id,
-    units_per_px: s.units_per_px,
+    units_per_px: num(s.units_per_px),
     scale_source: s.scale_source,
   })), "project_id,sheet_id");
 
@@ -670,7 +669,7 @@ export async function syncProjectToSupabase(projectId, payload, pricingOpts = {}
       ...(Array.isArray(s.segment_heights_ft) ? { segment_heights_ft: s.segment_heights_ft } : {}),
     },
     label: s.label,
-    height_ft: s.height_ft,
+    height_ft: num(s.height_ft),
     height_override: !!s.height_override,
     curved: !!s.curved,
     holes_count: holesCount(s),
@@ -733,17 +732,21 @@ export async function syncProjectToSupabase(projectId, payload, pricingOpts = {}
     unit: l.unit,
     qty_override: l.qty_override != null ? String(l.qty_override) : null,
     rate: l.rate != null ? String(l.rate) : null,
-    rate_material: l.rate_material != null ? Number(l.rate_material) : null,
-    rate_labour: l.rate_labour != null ? Number(l.rate_labour) : null,
-    rate_equipment: l.rate_equipment != null ? Number(l.rate_equipment) : null,
-    rate_sub: l.rate_sub != null ? Number(l.rate_sub) : null,
-    material_rate_id: l.material_rate_id || null,
-    amount: l.amount != null ? Number(l.amount) : null,
+    rate_material: num(l.rate_material),
+    rate_labour: num(l.rate_labour),
+    rate_equipment: num(l.rate_equipment),
+    rate_sub: num(l.rate_sub),
+    material_rate_id: (typeof l.material_rate_id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(l.material_rate_id)) ? l.material_rate_id : null,
+    amount: num(l.amount),
   })), "project_id,id");
 
   if (events.length) {
-    const { error: evErr } = await supabase.from("shape_events").insert(events);
-    if (evErr) throw evErr;
+    try {
+      const { error: evErr } = await supabase.from("shape_events").insert(events);
+      if (evErr) console.warn("[ADICC shape_events]", evErr);
+    } catch (e) {
+      console.warn("[ADICC shape_events]", e);
+    }
   }
 
   await upsertResilient("project_totals", {

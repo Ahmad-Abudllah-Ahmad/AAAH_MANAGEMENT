@@ -923,20 +923,10 @@ export default function TakeoffCanvas() {
   }, [commitMsgState]);
   const [showReport, setShowReport] = useState(false);  // Reports overlay (STACK-style breakdown + export)
   const [showBoq, setShowBoq] = useState(false);       // BOQ sidebar — floor masked data (right, opposite Files)
-  // AI Detection — ONLY A1105–A1109 floor plans. Keep mask DATA intact;
-  // those sheets show no masks until the nav button runs, then reveal one-by-one.
-  // All other PDFs keep normal always-visible masks + hover (untouched).
-  const AI_DETECT_FLOOR_PLAN_FILES = useMemo(() => new Set([
-    "a1105-1st floor plan.pdf",
-    "a1106-2nd floor plan.pdf",
-    "a1107-3rd floor plan.pdf",
-    "a1108-4th floor plan.pdf",
-    "a1109-5th & 6th floor plan.pdf",
-  ]), []);
+  // Auto-Takeoff sequential reveal animation applies to all sheets with masks.
   const isAiDetectFloorPlan = useCallback((sheetKey) => {
-    const file = parseSheetKey(String(sheetKey || "")).file.replace(/^.*[/\\]/, "").toLowerCase();
-    return AI_DETECT_FLOOR_PLAN_FILES.has(file);
-  }, [AI_DETECT_FLOOR_PLAN_FILES]);
+    return !!sheetKey;
+  }, []);
   // Per-sheet reveal counts persist when switching files among A1105–A1109.
   // Clicking AI Detection always restarts the sequential reveal on the viewed sheet.
   const [aiDetectShownBySheet, setAiDetectShownBySheet] = useState({});
@@ -1865,11 +1855,29 @@ export default function TakeoffCanvas() {
   const hasSheetsRef = useRef(false);
   const sheetsLoadedRef = useRef(false);
   const noTabsRef = useRef(false);
+  const SAMPLE_PLAN_NAME = "sample-finish-plan.pdf";
+
   useEffect(() => {
     let off = false;
     setStatus("loading");
-    store.listSheets()
-      .then(async (list) => {
+    (async () => {
+      try {
+        let list = await store.listSheets();
+        if (!list.length) {
+          try {
+            const base = import.meta.env.BASE_URL || "/";
+            const res = await fetch(`${base}demo/sample-finish-plan.pdf`);
+            if (res.ok && !off) {
+              const blob = await res.blob();
+              const sampleFile = new File([blob], SAMPLE_PLAN_NAME, { type: "application/pdf" });
+              await handleFiles([sampleFile]);
+              list = await store.listSheets();
+            }
+          } catch (e) {
+            console.warn("Failed to load sample plan", e);
+          }
+        }
+
         if (off) return;
         hasSheetsRef.current = list.length > 0;
         sheetsLoadedRef.current = true;
@@ -1877,27 +1885,18 @@ export default function TakeoffCanvas() {
         if (list.length) {
           setActive(list[0].name);
           setStatus("ready");
-        } else {
-          // Auto-load recent project sample plan from opentakeoff
-          try {
-            const base = import.meta.env.BASE_URL || "/";
-            const res = await fetch(`${base}demo/sample-finish-plan.pdf`);
-            if (res.ok && !off) {
-              const blob = await res.blob();
-              const sampleFile = new File([blob], "sample-finish-plan.pdf", { type: "application/pdf" });
-              await handleFiles([sampleFile]);
-            } else if (!off) {
-              setStatus("empty");
-            }
-          } catch {
-            if (!off) setStatus("empty");
-          }
+        } else if (!off) {
+          setStatus("empty");
         }
-        // decide the landing only once the annotations effect has also reported
-        // no open tabs (see hydrate) — avoids a picker→gallery flash + wasted list
+
         if (noTabsRef.current) setView("canvas");
-      })
-      .catch((e) => !off && (setErr(String(e.message || e)), setStatus("error")));
+      } catch (e) {
+        if (!off) {
+          setErr(String(e?.message || e));
+          setStatus("error");
+        }
+      }
+    })();
     const onManifest = () => {
       if (off) return;
       store.listSheets().then((list) => {

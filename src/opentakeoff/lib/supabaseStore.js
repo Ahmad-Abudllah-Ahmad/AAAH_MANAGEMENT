@@ -51,11 +51,7 @@ function invalidatePlanManifestCache() {
 }
 
 function mergeRemoteAndLocalSheetNames(localList, rows) {
-  // Rows the Storage walk proved have no bytes can't be opened — leave them out
-  // rather than listing a sheet that fails the moment it's clicked.
-  const names = new Set((rows || [])
-    .filter((r) => r.in_storage !== false)
-    .map((r) => sheetListNameFromRow(r)));
+  const names = new Set((rows || []).map((r) => sheetListNameFromRow(r)));
   for (const s of localList || []) names.add(s.name);
   return [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }))
     .map((name) => ({ name }));
@@ -113,7 +109,7 @@ async function planManifestReconciled(fallbackRows) {
   return rows?.length ? rows : fallbackRows;
 }
 
-async function ensureProjectId() {
+async function ensureProjectId(explicitId = null) {
   const fromUrl = (() => {
     try { return new URLSearchParams(window.location.search).get("db"); }
     catch { return null; }
@@ -121,6 +117,10 @@ async function ensureProjectId() {
   if (fromUrl) {
     setSupabaseProjectId(fromUrl);
     return fromUrl;
+  }
+  if (explicitId) {
+    setSupabaseProjectId(explicitId);
+    return explicitId;
   }
   let id = getSupabaseProjectId();
   if (id) return id;
@@ -157,7 +157,7 @@ export function createSupabaseStore(projectId = null) {
       const localList = await local.listSheets();
       if (!isSupabaseConfigured()) return localList;
       try {
-        const pid = await ensureProjectId();
+        const pid = await ensureProjectId(scope);
         const rows = await ensurePlanManifest(pid);
         if (!rows.length) return localList;
         return mergeRemoteAndLocalSheetNames(localList, rows);
@@ -168,28 +168,41 @@ export function createSupabaseStore(projectId = null) {
     },
 
     async loadPdfData(name) {
-      try {
-        return await local.loadPdfData(name);
-      } catch (localErr) {
-        if (!isSupabaseConfigured()) throw localErr;
-        const pid = await ensureProjectId();
-        let row = cachedPlanManifestProjectId === pid && cachedPlanManifest
-          ? findManifestRow(cachedPlanManifest, name)
-          : undefined;
-        if (!row) {
-          const rows = await ensurePlanManifest(pid);
-          row = findManifestRow(rows, name);
-        }
-        const bytes = await downloadProjectFile(
-          pid,
-          name,
-          row?.storage_path,
-          row?.folder_path,
-        );
-        const mime = row?.content_type || "application/pdf";
-        await local.addPdf(new File([bytes], sheetBaseName(name), { type: mime }), { key: name });
-        return bytes;
+      if (!isSupabaseConfigured()) return local.loadPdfData(name);
+
+      const pid = await ensureProjectId(scope);
+      let row = cachedPlanManifestProjectId === pid && cachedPlanManifest
+        ? findManifestRow(cachedPlanManifest, name)
+        : undefined;
+      if (!row) {
+        const rows = await ensurePlanManifest(pid);
+        row = findManifestRow(rows, name);
       }
+
+      // Try local first, but verify size matches manifest to detect wrongly cached bytes
+      try {
+        const localBytes = await local.loadPdfData(name);
+        const expectedSize = row?.byte_size ? Number(row.byte_size) : 0;
+        if (expectedSize > 0 && Math.abs(localBytes.byteLength - expectedSize) > 1024) {
+          // Local cache has wrong file — remove and re-download
+          console.warn("[ADICC] Local cache size mismatch for", name, "local:", localBytes.byteLength, "expected:", expectedSize);
+          await local.removePdf(name).catch(() => {});
+        } else {
+          return localBytes;
+        }
+      } catch {
+        // Not in local cache — will download below
+      }
+
+      const bytes = await downloadProjectFile(
+        pid,
+        name,
+        row?.storage_path,
+        row?.folder_path,
+      );
+      const mime = row?.content_type || "application/pdf";
+      await local.addPdf(new File([bytes], sheetBaseName(name), { type: mime }), { key: name });
+      return bytes;
     },
 
     /** @returns {Promise<{ name: string }>} name is the folder-relative sheet id */
@@ -198,7 +211,7 @@ export function createSupabaseStore(projectId = null) {
       const sheetName = isSupabaseConfigured() ? sheetRelPath(file.name, folderPath) : file.name;
       const res = await local.addPdf(file, { key: sheetName });
       if (!isSupabaseConfigured() || opts.skipRemote) return res;
-      const projectId = await ensureProjectId();
+      const projectId = await ensureProjectId(scope);
       const bytes = await file.arrayBuffer();
       await upsertProjectFile(projectId, file.name, bytes, {
         folderPath,
@@ -211,7 +224,7 @@ export function createSupabaseStore(projectId = null) {
     /** Save many plans to Storage + project_files after a folder ingest (batched). */
     async persistPlansBatch(files, folderFor, onProgress) {
       if (!isSupabaseConfigured() || !files?.length) return;
-      const projectId = await ensureProjectId();
+      const projectId = await ensureProjectId(scope);
       await uploadProjectFilesBatch(projectId, files, { folderFor, onProgress });
       invalidatePlanManifestCache();
     },
@@ -220,7 +233,7 @@ export function createSupabaseStore(projectId = null) {
       await local.removePdf(name);
       if (!isSupabaseConfigured()) return;
       try {
-        await deleteProjectFile(await ensureProjectId(), name);
+        await deleteProjectFile(await ensureProjectId(scope), name);
         invalidatePlanManifestCache();
       } catch (e) {
         console.warn("[ADICC] deleteProjectFile", e);
@@ -230,18 +243,38 @@ export function createSupabaseStore(projectId = null) {
     async loadAnnotations() {
       if (!isSupabaseConfigured()) return local.loadAnnotations();
 
-      const projectId = await ensureProjectId();
+      const projectId = await ensureProjectId(scope);
+      const cached = await local.loadAnnotations().catch(() => null);
+
       let remote;
       try {
         remote = await loadProjectFromSupabase(projectId);
       } catch (e) {
         console.error("[ADICC Supabase load]", e);
-        const cached = await local.loadAnnotations();
         if (remoteHasData(cached)) return cached;
         throw e;
       }
 
-      let payload = remote?.payload || { ...emptyAnnotations() };
+      let payload = remote?.payload;
+      if (!payload || !payload.shapes?.length) {
+        if (cached && (cached.shapes?.length || cached.conditions?.length)) {
+          payload = { ...emptyAnnotations(), ...cached, schema: ANN_SCHEMA };
+          // Immediately save existing floor masks to Supabase so they are never lost!
+          await syncProjectToSupabase(projectId, payload).catch((e) => console.warn("[ADICC initial sync]", e));
+        } else {
+          payload = payload || { ...emptyAnnotations() };
+        }
+      } else if (cached?.shapes?.length) {
+        const remoteShapeIds = new Set((payload.shapes || []).map((s) => s.id));
+        const extraLocalShapes = (cached.shapes || []).filter((s) => !remoteShapeIds.has(s.id));
+        if (extraLocalShapes.length > 0) {
+          payload = {
+            ...payload,
+            shapes: [...payload.shapes, ...extraLocalShapes],
+          };
+          await syncProjectToSupabase(projectId, payload).catch((e) => console.warn("[ADICC merge sync]", e));
+        }
+      }
 
       try {
         const projectIdForPlans = projectId;
@@ -258,8 +291,6 @@ export function createSupabaseStore(projectId = null) {
           payload.shapes = normalizeAiFloorShapeSheetIds(payload.shapes, payload.file_folders);
         }
         notifyPlanManifestReady();
-        // The sheets the user left open are the ones about to render — fetch those
-        // bytes before the rest of a 1000-plan set.
         const priority = (Array.isArray(payload.sheet_tabs) ? payload.sheet_tabs : [])
           .map((key) => parseSheetKey(key).file);
         void planManifestReconciled(rows)
@@ -276,18 +307,12 @@ export function createSupabaseStore(projectId = null) {
         console.warn("[ADICC] hydrate plans from DB", e);
       }
 
-      if (remote?.payload) {
-        lastRemoteUpdatedAt = remote.updated_at;
-        seedShapeSnapshot(projectId, payload.shapes || []);
-        await local.saveAnnotations(payload);
-        const name = payload.project_name || "ADICC Project";
-        createSupabaseRecents(browserStorage()).remember({ id: projectId, name });
-        touchProjectOpened(projectId).catch(() => {});
-        return payload;
-      }
-
-      seedShapeSnapshot(projectId, []);
+      lastRemoteUpdatedAt = remote?.updated_at || new Date().toISOString();
+      seedShapeSnapshot(projectId, payload.shapes || []);
       await local.saveAnnotations(payload);
+      const name = payload.project_name || "ADICC Project";
+      createSupabaseRecents(browserStorage()).remember({ id: projectId, name });
+      touchProjectOpened(projectId).catch(() => {});
       return payload;
     },
 
@@ -295,7 +320,7 @@ export function createSupabaseStore(projectId = null) {
       if (!isSupabaseConfigured()) return local.saveAnnotations({ ...payload, schema: ANN_SCHEMA });
 
       const wrapped = { ...payload, schema: ANN_SCHEMA };
-      const projectId = await ensureProjectId();
+      const projectId = await ensureProjectId(scope);
       const shapes = normalizeAiFloorShapeSheetIds(wrapped.shapes || [], wrapped.file_folders || {});
       const toSave = shapes === (wrapped.shapes || []) ? wrapped : { ...wrapped, shapes };
       await syncProjectToSupabase(projectId, toSave);
@@ -309,7 +334,7 @@ export function createSupabaseStore(projectId = null) {
 
     /** Wipe remote + local project takeoff data; templates/libraries unchanged. */
     async resetProjectData() {
-      const projectId = await ensureProjectId();
+      const projectId = await ensureProjectId(scope);
       await clearProjectDataInSupabase(projectId);
       await local.clearProjectWorkspace();
       const empty = emptyAnnotations();

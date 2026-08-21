@@ -954,11 +954,16 @@ export async function openCitationFile(citation) {
  * @returns {Promise<FinishForRoomResponse>}
  */
 export async function finishForRoom(room) {
-  const response = await fetch(`${RAG_BASE}/finish-for-room`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ room }),
-  });
-  if (!response.ok) throw new Error(`finish-for-room failed: ${response.status}`);
-  return response.json();
+  if (!import.meta.env.VITE_RAG_URL) return { abstained: true };
+  try {
+    const response = await fetch(`${RAG_BASE}/finish-for-room`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ room }),
+    });
+    if (!response.ok) return { abstained: true };
+    return response.json();
+  } catch {
+    return { abstained: true };
+  }
 }
