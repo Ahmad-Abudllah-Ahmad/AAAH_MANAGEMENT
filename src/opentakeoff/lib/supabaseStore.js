@@ -2,6 +2,7 @@
 import { createLocalStore, ANN_SCHEMA, emptyAnnotations } from "./store.js";
 import { parseSheetKey } from "./sheetKey";
 import {
+  supabase,
   isSupabaseConfigured,
   getSupabaseProjectId,
   getSupabaseProjectIdFromUrl,
@@ -124,6 +125,22 @@ async function ensureProjectId(explicitId = null) {
   }
   let id = getSupabaseProjectId();
   if (id) return id;
+  // Instead of creating a new empty project, find the most recently updated
+  // existing project so every device/browser sees the same floor plans + data.
+  try {
+    const { data } = await supabase
+      .from("projects")
+      .select("id")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    if (data?.[0]?.id) {
+      id = data[0].id;
+      setSupabaseProjectId(id);
+      return id;
+    }
+  } catch (e) {
+    console.warn("[ADICC] failed to find existing project:", e?.message || e);
+  }
   id = await createSupabaseProject("ADICC Project");
   setSupabaseProjectId(id);
   return id;
