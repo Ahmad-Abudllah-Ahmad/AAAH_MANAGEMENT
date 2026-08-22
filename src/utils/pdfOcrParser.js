@@ -7,8 +7,10 @@ try {
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url
   ).toString();
+  pdfjsLib.GlobalWorkerOptions.wasmUrl = "/pdfjs-wasm/";
 } catch (e) {
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs`;
+  pdfjsLib.GlobalWorkerOptions.wasmUrl = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/`;
 }
 
 /**

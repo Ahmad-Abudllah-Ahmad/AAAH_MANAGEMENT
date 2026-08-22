@@ -199,6 +199,7 @@ function hitShapeC(s, x, y, w, h, thr) {
 }
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+pdfjsLib.GlobalWorkerOptions.wasmUrl = "/pdfjs-wasm/";
 
 // Hatch templates, palette, NO_FILL, and the HatchPattern/HatchSwatch pieces
 // live in components/hatches.jsx — shared with the TakeoffsPanel.

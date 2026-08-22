@@ -16,7 +16,9 @@ const AI_FLOOR_SHEET_FIX = new Set([
 ]);
 
 function sheetBasename(sheetId) {
-  return parseSheetKey(String(sheetId || "")).file.replace(/^.*[/\\]/, "").toLowerCase();
+  let base = parseSheetKey(String(sheetId || "")).file.replace(/^.*[/\\]/, "").toLowerCase();
+  try { base = decodeURIComponent(base); } catch (e) { /* ignore */ }
+  return base;
 }
 
 function needsAiFloorSheetFix(sheetId) {

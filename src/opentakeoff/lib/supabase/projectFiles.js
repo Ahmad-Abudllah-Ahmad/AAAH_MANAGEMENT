@@ -172,7 +172,13 @@ async function queryAllProjectFileRows(projectId) {
  *  @returns {Promise<Array<{ file_name: string, folder_path: string, byte_size: number, content_type: string|null, storage_path: string }>>} */
 export async function listProjectFiles(projectId, { onReconciled } = {}) {
   if (!supabase || !projectId) return [];
-  const dbRows = await queryAllProjectFileRows(projectId);
+  
+  let dbRows = null;
+  try {
+    dbRows = await queryAllProjectFileRows(projectId);
+  } catch (e) {
+    console.warn("[ADICC] queryAllProjectFileRows failed, falling back to storage walk:", e?.message || e);
+  }
 
   const walk = async () => {
     try {
@@ -183,7 +189,18 @@ export async function listProjectFiles(projectId, { onReconciled } = {}) {
     }
   };
 
-  if (!onReconciled) return mergeDbAndStorageManifest(dbRows, await walk());
+  if (!onReconciled) {
+    return mergeDbAndStorageManifest(dbRows || [], await walk());
+  }
+  
+  if (dbRows === null) {
+    // Database completely failed (e.g. 400 Bad Request). Await the walk so the UI gets files immediately instead of []
+    const storageRows = await walk();
+    const merged = mergeDbAndStorageManifest([], storageRows);
+    onReconciled(merged);
+    return merged;
+  }
+
   void walk().then((storageRows) => {
     onReconciled(mergeDbAndStorageManifest(dbRows, storageRows));
   });
