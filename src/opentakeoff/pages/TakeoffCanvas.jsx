@@ -1469,13 +1469,13 @@ export default function TakeoffCanvas() {
     const idx = list.findIndex((s) => s.id === shape.id);
     const shown = aiDetectShownBySheet[shape.sheet_id]
       ?? Object.entries(aiDetectShownBySheet).find(([k]) => aiFloorSheetKeysMatch(shape.sheet_id, k))?.[1];
-    if (shown === undefined) return true;
+    if (shown === undefined) return false;
     return idx >= 0 && idx < shown;
   }, [shapes, aiDetectShownBySheet, isAiDetectFloorPlan]);
   const aiDetectSheetRevealCount = useCallback((shapeSheetId) => {
     const count = aiDetectShownBySheet[shapeSheetId]
       ?? Object.entries(aiDetectShownBySheet).find(([k]) => aiFloorSheetKeysMatch(shapeSheetId, k))?.[1];
-    if (count === undefined) return shapes.filter((s) => aiFloorSheetKeysMatch(s.sheet_id, shapeSheetId)).length;
+    if (count === undefined) return 0;
     return count;
   }, [aiDetectShownBySheet, shapes]);
   // BOQ + Estimate follow Auto-Takeoff reveal — totals grow mask-by-mask in real time.
@@ -1887,7 +1887,6 @@ export default function TakeoffCanvas() {
         sheetsLoadedRef.current = true;
         setSheets(list);
         if (list.length) {
-          setActive(list[0].name);
           setStatus("ready");
         } else if (!off) {
           setStatus("empty");
@@ -2202,17 +2201,10 @@ export default function TakeoffCanvas() {
     setOpenTabs((t) => { const f = t.filter((k) => names.has(parseSheetKey(k).file)); return f.length === t.length ? t : f; });
   }, [sheets]);
 
-  // land on the first restored tab (the sheet-list effect defaults to sheets[0])
+  // We don't land on the first restored tab automatically anymore (per request: no pdf open by default)
   useEffect(() => {
     if (tabInitRef.current || !openTabs.length || !sheets.length) return;
     tabInitRef.current = true;
-    const land = sheetGroup.length
-      ? (sheetGroup.includes(openTabs[0]) ? openTabs[0] : sheetGroup[0])
-      : openTabs[0];
-    const t = parseSheetKey(land);
-    if (t.file !== active) setActive(t.file);
-    setPage(t.page);
-    setFocusKey(land);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openTabs, sheets]);
 
@@ -2280,12 +2272,6 @@ export default function TakeoffCanvas() {
     // Tabs restored before `active` is set → groupKeys is empty and we used to
     // return while status stayed "loading" forever. Land on the first tab.
     if (!groupKeys.length) {
-      const land = openTabs[0];
-      if (land && !active) {
-        const t = parseSheetKey(land);
-        setActive(t.file);
-        setPage(t.page);
-      }
       return;
     }
     const hiJoin = hiResKeys.join(" ");

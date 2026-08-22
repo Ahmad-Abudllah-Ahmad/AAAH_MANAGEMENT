@@ -525,10 +525,7 @@ export default function PastProjectsPanel({
                           </strong>
                         )}
                       </div>
-                      <div className="home-project-card-org">
-                        <span style={{ display: "inline-flex", flexShrink: 0 }}><Icon name="pin" size={12} /></span>
-                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>ADICC</span>
-                      </div>
+
                     </div>
 
                     {active && (
