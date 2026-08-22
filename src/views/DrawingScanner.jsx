@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import TakeoffCanvas from '../opentakeoff/pages/TakeoffCanvas.jsx';
+import SupabaseHome from '../opentakeoff/components/SupabaseHome.jsx';
 import { isSupabaseConfigured, getSupabaseProjectId } from '../opentakeoff/lib/supabase/client.js';
 import { setActiveStore } from '../opentakeoff/lib/store.js';
 import '../opentakeoff/styles/tokens.css';
@@ -8,8 +9,15 @@ import '../opentakeoff/styles/app.css';
 
 export const DrawingScanner = () => {
   const [searchParams] = useSearchParams();
-  const dbParam = searchParams.get('db') || searchParams.get('project') || getSupabaseProjectId() || '';
+  // Only URL params decide routing — localStorage is for store internals only
+  const urlProjectId = searchParams.get('db') || searchParams.get('project') || '';
+  const dbParam = urlProjectId || getSupabaseProjectId() || '';
   const [ready, setReady] = useState(!isSupabaseConfigured());
+
+  // When Supabase is configured but no project is selected via URL, show the project listing page
+  if (isSupabaseConfigured() && !urlProjectId) {
+    return <SupabaseHome />;
+  }
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
