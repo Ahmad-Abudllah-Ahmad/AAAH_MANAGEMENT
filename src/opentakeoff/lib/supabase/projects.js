@@ -14,11 +14,12 @@ function sheetCountFromAnnotations(annotations) {
 
 function summarizeRow(row) {
   const totals = Array.isArray(row.project_totals) ? row.project_totals[0] : row.project_totals;
+  const annShapes = Array.isArray(row.annotations?.shapes) ? row.annotations.shapes.length : 0;
   return {
     id: row.id,
     name: row.name || "Untitled project",
     sheetCount: sheetCountFromAnnotations(row.annotations),
-    shapeCount: totals?.shape_count ?? 0,
+    shapeCount: totals?.shape_count || annShapes || 0,
     floorSf: totals?.floor_sf ?? 0,
     lastOpenedAt: row.last_opened_at || null,
     updatedAt: row.updated_at || null,

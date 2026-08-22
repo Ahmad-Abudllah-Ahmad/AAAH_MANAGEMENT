@@ -1468,15 +1468,16 @@ export default function TakeoffCanvas() {
     const list = shapes.filter((s) => aiFloorSheetKeysMatch(s.sheet_id, shape.sheet_id) && s.measure_role !== "deduct");
     const idx = list.findIndex((s) => s.id === shape.id);
     const shown = aiDetectShownBySheet[shape.sheet_id]
-      ?? Object.entries(aiDetectShownBySheet).find(([k]) => aiFloorSheetKeysMatch(shape.sheet_id, k))?.[1]
-      ?? 0;
+      ?? Object.entries(aiDetectShownBySheet).find(([k]) => aiFloorSheetKeysMatch(shape.sheet_id, k))?.[1];
+    if (shown === undefined) return true;
     return idx >= 0 && idx < shown;
   }, [shapes, aiDetectShownBySheet, isAiDetectFloorPlan]);
-  const aiDetectSheetRevealCount = useCallback((shapeSheetId) => (
-    aiDetectShownBySheet[shapeSheetId]
-      ?? Object.entries(aiDetectShownBySheet).find(([k]) => aiFloorSheetKeysMatch(shapeSheetId, k))?.[1]
-      ?? 0
-  ), [aiDetectShownBySheet]);
+  const aiDetectSheetRevealCount = useCallback((shapeSheetId) => {
+    const count = aiDetectShownBySheet[shapeSheetId]
+      ?? Object.entries(aiDetectShownBySheet).find(([k]) => aiFloorSheetKeysMatch(shapeSheetId, k))?.[1];
+    if (count === undefined) return shapes.filter((s) => aiFloorSheetKeysMatch(s.sheet_id, shapeSheetId)).length;
+    return count;
+  }, [aiDetectShownBySheet, shapes]);
   // BOQ + Estimate follow Auto-Takeoff reveal — totals grow mask-by-mask in real time.
   const boqShapes = useMemo(
     () => shapes.filter((s) => {
@@ -1527,10 +1528,12 @@ export default function TakeoffCanvas() {
     // Floor masks only — cutouts stay visible separately and must not pad the reveal count.
     const list = shapes.filter((s) => aiFloorSheetKeysMatch(s.sheet_id, key) && s.measure_role !== "deduct");
     const total = list.length;
+    console.log('[Auto-Takeoff] Running reveal for sheet:', key, 'Masks count:', total);
     // Click again always restarts reveal on this file from the first mask.
     setAiDetectShownBySheet((prev) => ({ ...prev, [key]: 0 }));
     setAiDetectAnimatingKey(key);
     if (total <= 0) {
+      console.log('[Auto-Takeoff] No floor masks found for sheet:', key);
       setAiDetectAnimatingKey(null);
       return;
     }

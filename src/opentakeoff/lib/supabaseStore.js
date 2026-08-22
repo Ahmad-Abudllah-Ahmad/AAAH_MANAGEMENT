@@ -257,7 +257,7 @@ export function createSupabaseStore(projectId = null) {
 
       let payload = remote?.payload;
       if (!payload || !payload.shapes?.length) {
-        if (cached && (cached.shapes?.length || cached.conditions?.length)) {
+        if (cached && Array.isArray(cached.shapes) && cached.shapes.length > 0) {
           payload = { ...emptyAnnotations(), ...cached, schema: ANN_SCHEMA };
           // Immediately save existing floor masks to Supabase so they are never lost!
           await syncProjectToSupabase(projectId, payload).catch((e) => console.warn("[ADICC initial sync]", e));

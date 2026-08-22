@@ -358,7 +358,7 @@ export async function loadProjectFromSupabase(projectId) {
   if (!proj) return null;
 
   const ann = proj.annotations;
-  if (ann && typeof ann === "object" && ann.schema === ANN_SCHEMA) {
+  if (ann && typeof ann === "object" && ann.schema === ANN_SCHEMA && Array.isArray(ann.shapes) && ann.shapes.length > 0) {
     const payload = { ...ann, schema: ANN_SCHEMA };
     // Prefer column file_folders when the JSON blob lacks it (older saves).
     if ((!payload.file_folders || !Object.keys(payload.file_folders).length) && proj.file_folders) {
@@ -408,10 +408,10 @@ export async function loadProjectFromSupabase(projectId) {
     file_folders: proj.file_folders || {},
     symbol_notes: proj.symbol_notes || {},
     provenance_counters: proj.provenance_counters || { shapes_deleted: {} },
-    sheet_group: proj.sheet_group || [],
-    last_group: proj.last_group || [],
-    sheet_tabs: proj.sheet_tabs || [],
-    conditions: (conditions || []).map((c) => ({
+    sheet_group: proj.sheet_group || ann?.sheet_group || [],
+    last_group: proj.last_group || ann?.last_group || [],
+    sheet_tabs: proj.sheet_tabs || ann?.sheet_tabs || [],
+    conditions: (conditions?.length ? conditions : (ann?.conditions || [])).map((c) => ({
       id: c.id,
       finish_tag: c.finish_tag,
       color: c.color,

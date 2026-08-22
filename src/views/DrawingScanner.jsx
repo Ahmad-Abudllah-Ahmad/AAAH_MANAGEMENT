@@ -12,19 +12,21 @@ export const DrawingScanner = () => {
   // Only URL params decide routing — localStorage is for store internals only
   const urlProjectId = searchParams.get('db') || searchParams.get('project') || '';
   const dbParam = urlProjectId || getSupabaseProjectId() || '';
-  const [ready, setReady] = useState(!isSupabaseConfigured());
+  const [ready, setReady] = useState(false);
 
-  // When Supabase is configured but no project is selected via URL, show the project listing page
-  if (isSupabaseConfigured() && !urlProjectId) {
-    return <SupabaseHome />;
-  }
+  const showHome = isSupabaseConfigured() && !urlProjectId;
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
       setReady(true);
       return;
     }
+    if (showHome) {
+      setReady(false);
+      return;
+    }
     let live = true;
+    setReady(false);
     (async () => {
       try {
         const { createSupabaseStore } = await import('../opentakeoff/lib/supabaseStore.js');
@@ -33,8 +35,9 @@ export const DrawingScanner = () => {
         if (typeof store.prefetchPlanManifest === 'function') {
           await store.prefetchPlanManifest().catch(() => {});
         }
+        if (!live) return;
         setActiveStore(store);
-        if (live) setReady(true);
+        setReady(true);
       } catch (err) {
         console.error('[DrawingScanner DB init]', err);
         if (live) setReady(true);
@@ -44,11 +47,22 @@ export const DrawingScanner = () => {
       live = false;
       setActiveStore();
     };
-  }, [dbParam]);
+  }, [dbParam, showHome]);
+
+  // When Supabase is configured but no project is selected via URL, show the project listing page
+  if (showHome) {
+    return <SupabaseHome />;
+  }
 
   return (
     <div style={{ width: '100%', height: '100%', flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--paper-cream)' }}>
-      {ready && <TakeoffCanvas key={dbParam || 'local'} />}
+      {ready ? (
+        <TakeoffCanvas key={dbParam || 'local'} />
+      ) : (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-muted)', fontSize: 13 }}>
+          Opening project…
+        </div>
+      )}
     </div>
   );
 };
