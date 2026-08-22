@@ -130,8 +130,8 @@ async function queryProjectFilesPage(projectId, from, select, orderByFolder, pag
 }
 
 const SELECT_ATTEMPTS = [
-  { select: "file_name, folder_path, byte_size, content_type, storage_path", orderByFolder: true },
   { select: "file_name, folder_path, byte_size, mime_type, storage_path", orderByFolder: true },
+  { select: "file_name, folder_path, byte_size, content_type, storage_path", orderByFolder: true },
   { select: "file_name, byte_size, storage_path", orderByFolder: false },
   { select: "file_name, storage_path", orderByFolder: false },
 ];
